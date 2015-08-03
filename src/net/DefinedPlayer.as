@@ -27,12 +27,13 @@ package net
 			
 			var netConnection:NetConnection = new NetConnection();
 			netConnection.connect(null);
-			
 			_netStream = new NetStream(netConnection);
 			_netStream.client = {onMetaData:this.onMetaData, onCuePoint:this.onCuePoint};
 			_netStream.addEventListener(NetStatusEvent.NET_STATUS, netStreamStatus);
 			
 			heartbeat.addEventListener(TimerEvent.TIMER, onHeartbear);
+			
+			_netStream.bufferTime
 		}
 		
 		
@@ -44,6 +45,14 @@ package net
 		public function set netStream(value:NetStream):void
 		{
 			_netStream = value;
+		}
+		
+		/**
+		 *	定在开始显示流之前需要多长时间将消息存入缓冲区。 
+		 */
+		public function set bufferTime(value:Number):void
+		{
+			_netStream.bufferTime = value;	
 		}
 		
 		public function get mediaInfo():Object
@@ -128,7 +137,7 @@ package net
 		
 		private function onHeartbear(event:TimerEvent):void
 		{
-			dispatchEvent( new PlayerEvent(PlayerEvent.PLAYER_UPDATE, _netStream.time));
+			dispatchEvent( new PlayerEvent(PlayerEvent.PLAYER_UPDATE, {time:_netStream.time, bytesProgress:_netStream.bytesLoaded/_netStream.bytesTotal*100}));
 		}
 		
 		private function onMetaData(info:Object) : void

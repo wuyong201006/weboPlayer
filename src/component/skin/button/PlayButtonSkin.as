@@ -1,12 +1,12 @@
-package component.skin
+package component.skin.button
 {
 	import org.flexlite.domUI.components.UIAsset;
 	import org.flexlite.domUI.skins.vector.ButtonSkin;
 	
-	public class ShareBigButtonSkin extends ButtonSkin
+	public class PlayButtonSkin extends ButtonSkin
 	{
 		private var bg:UIAsset;
-		public function ShareBigButtonSkin()
+		public function PlayButtonSkin()
 		{
 			super();
 		}
@@ -16,7 +16,7 @@ package component.skin
 			super.createChildren();
 			
 			bg = new UIAsset();
-			bg.skinName = new share_big_normal;
+			bg.skinName = new play_normal;
 			addElement(bg);
 		}
 		
@@ -29,10 +29,10 @@ package component.skin
 				case "up":
 				case "disabled":
 				case "down":
-					bg.skinName = new share_big_normal;
+					bg.skinName = new play_normal;
 					break;
 				case "over":
-					bg.skinName = new share_big_hover;
+					bg.skinName = new play_hover;
 					break;
 			}
 		}

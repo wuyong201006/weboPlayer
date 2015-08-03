@@ -1,14 +1,18 @@
-package component.skin
+package component.skin.button
 {
 	import org.flexlite.domUI.components.UIAsset;
 	import org.flexlite.domUI.skins.vector.ButtonSkin;
-	
-	public class PauseButtonSkin extends ButtonSkin
+
+	public class RecommendButtonSkin extends ButtonSkin
 	{
 		private var bg:UIAsset;
-		public function PauseButtonSkin()
+		
+		private var _normal:Object;
+		private var _hover:Object;
+		public function RecommendButtonSkin(normal:Object, hover:Object)
 		{
-			super();
+			_normal = normal;
+			_hover = hover;
 		}
 		
 		override protected function createChildren():void
@@ -16,7 +20,7 @@ package component.skin
 			super.createChildren();
 			
 			bg = new UIAsset();
-			bg.skinName = new pause_normal;
+			bg.skinName = _normal;
 			addElement(bg);
 		}
 		
@@ -29,10 +33,10 @@ package component.skin
 				case "up":
 				case "disabled":
 				case "down":
-					bg.skinName = new pause_normal;
+					bg.skinName = _normal;
 					break;
 				case "over":
-					bg.skinName = new pause_hover;
+					bg.skinName = _hover;
 					break;
 			}
 		}

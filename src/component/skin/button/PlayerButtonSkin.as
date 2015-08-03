@@ -1,14 +1,21 @@
-package component.skin
+package component.skin.button
 {
 	import org.flexlite.domUI.components.UIAsset;
 	import org.flexlite.domUI.skins.vector.ButtonSkin;
 	
-	public class PlayButtonSkin extends ButtonSkin
+	/**
+	 *	播放器按钮基类 
+	 */
+	public class PlayerButtonSkin extends ButtonSkin
 	{
 		private var bg:UIAsset;
-		public function PlayButtonSkin()
+		private var _normal:Class;
+		private var _hover:Class;
+		public function PlayerButtonSkin(normal:Class, hover:Class)
 		{
 			super();
+			_normal = normal;
+			_hover = hover;
 		}
 		
 		override protected function createChildren():void
@@ -16,7 +23,7 @@ package component.skin
 			super.createChildren();
 			
 			bg = new UIAsset();
-			bg.skinName = new play_normal;
+			bg.skinName = new _normal;
 			addElement(bg);
 		}
 		
@@ -29,10 +36,10 @@ package component.skin
 				case "up":
 				case "disabled":
 				case "down":
-					bg.skinName = new play_normal;
+					bg.skinName = new _normal;
 					break;
 				case "over":
-					bg.skinName = new play_hover;
+					bg.skinName = new _hover;
 					break;
 			}
 		}

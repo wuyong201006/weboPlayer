@@ -22,8 +22,10 @@ package
 	import org.flexlite.domUI.managers.SystemManager;
 	import org.flexlite.domUI.skins.themes.VectorTheme;
 	
+	import view.AdvertChart;
 	import view.ControllBar;
 	import view.LoadingBar;
+	import view.Recommend;
 	import view.TopBar;
 	
 	[SWF(width="482", height="355", frameRate="25"]
@@ -60,64 +62,6 @@ package
 			requestPlayer();
 		}
 		
-		private function initPlayer():void
-		{
-			if(playerParams.url)
-			{
-				//				controllBar.updateProgressBarMaximum(playerParams.content.duration);
-				
-				definedPlayer = new DefinedPlayer(playerParams.url.stream.url, 0);
-				videoScreen.attatchNetStream(definedPlayer.netStream);
-			}
-			
-			definedPlayer.addEventListener(PlayerEvent.PLAYER_UPDATE, playerUpdate);
-			definedPlayer.addEventListener(PlayerEvent.MEDIA_DURATION_UPDATE, durationUpdate);
-//			
-//			controllBar.addEventListener(PlayerEvent.CONTROLLBAR_UPDATE, controllBarUpdate);
-//			controllBar.addEventListener(PlayerEvent.CONTROLLBAR_PLAY, controllBarPlay);
-//			controllBar.addEventListener(PlayerEvent.VOLUME_UPDATE, volumeUpdate);
-//			
-			definedPlayer.play();
-//			
-//			controllBar.playStatus = Boolean(int(playerParams.auto_play));
-//			playerStatus = !playerParams.auto_play;
-//			
-//			videoScreenChange();
-//			if(ExternalInterface.available)
-//			{
-//				ExternalInterface.addCallback("seek", seekExternal);//秒
-//			}
-		}
-		
-		private var rateCount:int=0;
-		private function playerUpdate(event:PlayerEvent):void
-		{
-			rateCount++;
-			//call2js
-			if(ExternalInterface.available)
-			{
-				ExternalInterface.call('updateTime', Number(event.data)*1000);
-			}
-			
-			//			playLabel.text = "当前播放时间"+(Number(event.data));
-			
-			if(rateCount >= 10)
-			{
-				rateCount = 0;
-				controllBar.updateProgressBarCur(Number(event.data));
-			}
-		}
-		
-		private function durationUpdate(event:PlayerEvent):void
-		{
-//			if(!Boolean(int(playerParams.auto_play)) && IsPlayer)
-//			{
-//				definedPlayer.pause();
-//				IsPlayer = false;				
-//			}
-			
-			controllBar.updateProgressBarMaximum(Number(event.data));
-		}
 		
 		private function requestPlayer():void
 		{
@@ -157,6 +101,83 @@ package
 			return JSON.parse(decryptStr);
 		}
 		
+		private function initPlayer():void
+		{
+			if(playerParams.url)
+			{
+				//				controllBar.updateProgressBarMaximum(playerParams.content.duration);
+				
+				definedPlayer = new DefinedPlayer(playerParams.url.stream.url, 0);
+				videoScreen.attatchNetStream(definedPlayer.netStream);
+			}
+			
+			definedPlayer.addEventListener(PlayerEvent.PLAYER_UPDATE, playerUpdate);
+			definedPlayer.addEventListener(PlayerEvent.MEDIA_DURATION_UPDATE, durationUpdate);
+			
+			controllBar.addEventListener(PlayerEvent.CONTROLLBAR_UPDATE, controllBarUpdate);
+			controllBar.addEventListener(PlayerEvent.CONTROLLBAR_PLAY, controllBarPlay);
+			controllBar.addEventListener(PlayerEvent.VOLUME_UPDATE, volumeUpdate);
+//			
+			definedPlayer.play();
+//			
+//			controllBar.playStatus = Boolean(int(playerParams.auto_play));
+//			playerStatus = !playerParams.auto_play;
+//			
+//			videoScreenChange();
+//			if(ExternalInterface.available)
+//			{
+//				ExternalInterface.addCallback("seek", seekExternal);//秒
+//			}
+		}
+		
+		private var rateCount:int=0;
+		private function playerUpdate(event:PlayerEvent):void
+		{
+			var object:Object = event.data;
+			rateCount++;
+			//call2js
+			if(ExternalInterface.available)
+			{
+				ExternalInterface.call('updateTime', Number(object.time)*1000);
+			}
+			
+			//			playLabel.text = "当前播放时间"+(Number(event.data));
+			
+			if(rateCount >= 10)
+			{
+				rateCount = 0;
+				controllBar.updateProgressBarCur(Number(object.time));
+				
+				controllBar.updateLoadProgress(object.bytesProgress);
+			}
+		}
+		
+		private function durationUpdate(event:PlayerEvent):void
+		{
+//			if(!Boolean(int(playerParams.auto_play)) && IsPlayer)
+//			{
+//				definedPlayer.pause();
+//				IsPlayer = false;				
+//			}
+			
+			controllBar.updateProgressBarMaximum(Number(event.data));
+		}
+		
+		private function controllBarUpdate(event:PlayerEvent):void
+		{
+			definedPlayer.seek(Number(event.data));
+		}
+		
+		private function controllBarPlay(event:PlayerEvent):void
+		{
+			definedPlayer.pause();
+		}
+		
+		private function volumeUpdate(event:PlayerEvent):void
+		{
+			definedPlayer.volume(Number(event.data));
+		}
+		
 		override protected function createChildren():void
 		{
 			super.createChildren();
@@ -175,15 +196,25 @@ package
 			
 			var load:LoadingBar = new LoadingBar();
 			load.horizontalCenter = 0;
-//			load.verticalCenter = 0;
 			load.top = 40;
 			addElement(load);
+			
+//			var re:Recommend = new Recommend();
+//			re.x = 0;
+//			re.y = 40;
+//			addElement(re);
 			
 			controllBar = new ControllBar();
 			controllBar.percentWidth = 100;
 			controllBar.height = 40;
 			controllBar.bottom = 0;
 			addElement(controllBar);
+			
+//			var ac:AdvertChart = new AdvertChart();
+//			ac.horizontalCenter = 0;
+//			ac.verticalCenter = 0;
+//			addElement(ac);
+			
 		}
 	}
 }

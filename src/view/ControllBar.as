@@ -7,9 +7,11 @@ package view
 	import flash.events.FullScreenEvent;
 	import flash.events.MouseEvent;
 	
-	import component.skin.PauseButtonSkin;
-	import component.skin.PlayButtonSkin;
-	import component.skin.PlayerButtonSkin;
+	import component.skin.button.PauseButtonSkin;
+	import component.skin.button.PlayButtonSkin;
+	import component.skin.button.PlayerButtonSkin;
+	import component.skin.slider.PlayerHSliderSkin;
+	import component.slider.PlayerHSlider;
 	
 	import date.DateString;
 	
@@ -19,13 +21,14 @@ package view
 	import org.flexlite.domUI.components.Group;
 	import org.flexlite.domUI.components.HSlider;
 	import org.flexlite.domUI.components.Label;
+	import org.flexlite.domUI.components.ProgressBar;
 	import org.flexlite.domUI.components.Rect;
 	import org.flexlite.domUI.components.UIAsset;
 	import org.flexlite.domUI.components.VSlider;
 	
 	public class ControllBar extends Group
 	{
-		private var progressBar:HSlider;
+		private var progressBar:PlayerHSlider;
 		private var volumeBar:HSlider;
 		//UI PlayButton
 		private var playBtn:Button;
@@ -60,6 +63,11 @@ package view
 		{
 			progressBar.maximum = value;
 //			talProLabel.text = int(progressBar.maximum/3600)+":"+DateString.dateToString(progressBar.maximum%3600);
+		}
+		
+		public function updateLoadProgress(value:Number):void
+		{
+			progressBar.progressValue = value;
 		}
 		
 		public function updateProgressBarCur(curValue:Number, maxValue:Number=0):void
@@ -382,13 +390,14 @@ package view
 			gTxt.bold = true;
 			g.addElement(gTxt);
 			
-			progressBar = new HSlider();
+			progressBar = new PlayerHSlider();
 			progressBar.percentWidth = 100;
 			progressBar.top = -8;
 			addElement(progressBar);
 			progressBar.minimum = 0;
 			progressBar.maximum = 1;
 			progressBar.stepSize = 1;
+			progressBar.skinName = PlayerHSliderSkin;
 			progressBar.addEventListener(Event.CHANGE, progressBarChange);
 		}
 	}

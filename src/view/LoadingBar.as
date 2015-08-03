@@ -1,6 +1,11 @@
 package view
 {
+	import com.greensock.TweenLite;
+	import com.greensock.easing.Linear;
+	
 	import flash.display.Bitmap;
+	
+	import component.skin.progressBar.LoadProgressBarSkin;
 	
 	import org.flexlite.domUI.components.Group;
 	import org.flexlite.domUI.components.ProgressBar;
@@ -13,17 +18,25 @@ package view
 	{
 		private var progressBar:ProgressBar;
 		private var turn:UIAsset;
+		private var tg:Group;
 		public function LoadingBar()
 		{
 			super();
 		}
 		
-		override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+		public function updateProgress(curValue:Number, maxValue:Number):void
 		{
-			super.updateDisplayList(unscaledWidth, unscaledHeight);
+			progressBar.value = curValue/maxValue*100;
 		}
 		
-		private var group:Group
+		private function startTurn():void
+		{
+			if(tg.rotation > 0)
+				tg.rotation = 0;
+			
+			TweenLite.to(tg, 0.5, {rotation:360, ease:Linear.easeNone, onComplete:startTurn});
+		}
+		
 		override protected function createChildren():void
 		{
 			super.createChildren();
@@ -32,7 +45,7 @@ package view
 			back.skinName = new loadBack;
 			addElement(back);
 			
-			group = new Group();
+			var group:Group = new Group();
 			group.verticalCenter = 0;
 			group.horizontalCenter = 0;
 			addElement(group);
@@ -46,14 +59,23 @@ package view
 			group.addElement(g);
 			
 			progressBar = new ProgressBar();
-//			progressBar.skinName =
+			progressBar.height = 10;
 			progressBar.width = 210;
+			progressBar.skinName = LoadProgressBarSkin;
 			g.addElement(progressBar);
+			
+			tg = new Group();
+			tg.left = 222;
+			tg.top = 5;
+			g.addElement(tg);
 			
 			turn = new UIAsset();
 			turn.skinName = new loadTurn;
-			turn.left = 220;
-			g.addElement(turn);
+			turn.left = -13;
+			turn.top = -13;
+			tg.addElement(turn);
+			
+			startTurn();
 		}
 	}
 }

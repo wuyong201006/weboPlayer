@@ -6,7 +6,7 @@ package view
 	import flash.events.FullScreenEvent;
 	import flash.events.MouseEvent;
 	
-	import component.skin.ShareBigButtonSkin;
+	import component.skin.button.ShareBigButtonSkin;
 	
 	import org.flexlite.domUI.components.Button;
 	import org.flexlite.domUI.components.EditableText;

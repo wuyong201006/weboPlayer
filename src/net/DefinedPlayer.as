@@ -8,8 +8,12 @@ package net
 	import flash.net.NetStream;
 	import flash.utils.Timer;
 	import flash.utils.clearInterval;
+	import flash.utils.clearTimeout;
 	import flash.utils.setInterval;
+	import flash.utils.setTimeout;
 	
+	import events.GlobalServer;
+	import events.GlobalServerEvent;
 	import events.PlayerEvent;
 
 	public class DefinedPlayer extends EventDispatcher
@@ -60,9 +64,21 @@ package net
 			return _mediaInfo;
 		}
 		
+		private var IsBufferFull:Boolean=false;
+		private var timeOut:Number;
 		public function play():void
 		{
 			_netStream.play(_url);
+			if(!IsBufferFull)
+			{
+				var dp:DefinedPlayer = this;
+				var ti:Number = 0;
+				
+				timeOut = setInterval(function():void{
+					ti += 0.1;
+					dp.dispatchEvent(new PlayerEvent(PlayerEvent.PLAYER_BUFFER_UPDATE, ti/*netStream.bufferLength*/))
+				}, 100);
+			}
 		}
 		
 		public function pause():void
@@ -112,12 +128,17 @@ package net
 				case "NetStream.Buffer.Empty":
 					break;
 				case "NetStream.Buffer.Full":
+					clearTimeout(timeOut);
+					IsBufferFull = true;
+					dispatchEvent( new PlayerEvent(PlayerEvent.PLAYER_BUFFER_FULL));
 					break;
 				case "NetStream.Play.Start":
 					heartbeat.start();
+//					GlobalServer.dispatchEvent(new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_START));
 					break;
 				case "NetStream.Play.Stop":
 					heartbeat.stop();
+					GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_STOP));
 					break;
 				case "NetStream.Seek.Failed":
 					clearInterval(seekID);

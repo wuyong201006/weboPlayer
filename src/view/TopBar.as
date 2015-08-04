@@ -8,6 +8,8 @@ package view
 	
 	import component.skin.button.ShareBigButtonSkin;
 	
+	import events.PlayerEvent;
+	
 	import org.flexlite.domUI.components.Button;
 	import org.flexlite.domUI.components.EditableText;
 	import org.flexlite.domUI.components.Group;
@@ -50,7 +52,7 @@ package view
 		
 		private function clickShare(event:MouseEvent):void
 		{
-			
+			dispatchEvent( new PlayerEvent(PlayerEvent.VIDEO_SHARE_ADD));
 		}
 		
 		private function clickSearch(event:MouseEvent):void
@@ -75,23 +77,12 @@ package view
 		{
 			super.createChildren();
 			
-//			var bg:Rect = new Rect();
-//			bg.fillColor = 0x0;
+			var bg:Rect = new Rect();
+			bg.fillColor = 0x262C3E;
 //			bg.alpha = 0.6;
-//			bg.percentHeight = bg.percentWidth = 100;
-//			addElement(bg);
-			var bg:UIAsset = new UIAsset();
-			bg.top = 0;
-			bg.skinName = new back_top;
+			bg.percentHeight = bg.percentWidth = 100;
 			addElement(bg);
 			
-//			var tg:Rect = new Rect();
-//			tg.fillColor = 0xffffff;
-//			tg.width = 170;
-//			tg.height = 25;
-//			tg.verticalCenter = 0;
-//			tg.left = 20;
-//			addElement(tg);
 			var sg:UIAsset = new UIAsset();
 			sg.left = 20;
 			sg.verticalCenter = 0;

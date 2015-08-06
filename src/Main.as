@@ -11,9 +11,8 @@ package
 	import flash.events.MouseEvent;
 	import flash.external.ExternalInterface;
 	import flash.net.URLLoader;
-	import flash.net.URLLoaderDataFormat;
 	import flash.net.URLRequest;
-	import flash.net.URLRequestMethod;
+	import flash.net.navigateToURL;
 	import flash.utils.clearTimeout;
 	import flash.utils.setTimeout;
 	
@@ -37,12 +36,13 @@ package
 	import view.Recommend;
 	import view.TopBar;
 	import view.VideoShare;
+	import view.WaterMark;
 	
-	[SWF(width="482", height="355", frameRate="25", backgroundColor="#000000"]
+	[SWF(width="482", height="355", frameRate="25", backgroundColor="#000000")]
 	public class Main extends SystemManager
 	{
-		private const minWidth:Number = 482;
-		private const minHeight:Number = 355;
+		private const minW:Number = 482;
+		private const minH:Number = 355;
 		
 		private var _frontContainer:Group;
 		private var _behindContainer:Group;
@@ -54,6 +54,7 @@ package
 		private var controllBar:ControllBar;
 		private var recommend:Recommend;
 		private var share:VideoShare;
+		private var waterMark:WaterMark;
 		
 		private var definedPlayer:DefinedPlayer;
 		private var playerUrl:String = "http://www.tvm.cn/weibo/get_data?url=www.tvm.cn/ishare/play/play.html?id=";
@@ -153,21 +154,14 @@ package
 			playerInfo.title = data.display_name;
 			playerInfo.url = data.stream.url;
 			playerInfo.summary = data.summary;
-			var imageUrl:String = data.image.url;
-			playerInfo.thumburl = String(imageUrl).replace(/\s/g, "").replace("[\\x00-\\x20]", "");
+			var u:String	= data.image.url;
+//			playerInfo.thumburl = u.replace(/\s/g, "").split("\x00-\x20").join("");
+//			playerInfo.thumburl = "";
+			playerInfo.thumburl = u;
+			
 			playerInfo.swfUrl =data.embed_code;
 			playerInfo.linksUrl = data.links.url;
 			
-			var str:String = "http://video.cloud.tvmining.com/TVM/JPG/WuXiNews/2015/07/21/"+
- "WuXiNews_1500000_20150721_14164482_0.jpg";
-			str ="http://video.cloud.tvmining.com/TVM/JPG/WuXiNews/2015/07/21/"+"\t\n\r"
-				+" WuXiNews_1500000_20150721_14164482_0.jpg";
-			for(var i:int=0;i<str.length;i++)
-			{
-				trace("index:"+i+"str:"+str.charAt(i));
-			}
-			var ar:Array = str.split("[\\x00-\\x20]");
-			var s:String = ar.join("");
 //			if(definedPlayer == null)
 			initPlayer();
 		}
@@ -200,6 +194,9 @@ package
 			GlobalServer.addEventListener(GlobalServerEvent.PLAYER_SEEK_UPDATE, playerSeekUpdate);
 			
 			GlobalServer.addEventListener(GlobalServerEvent.RECOMMEND_PLAY, recommendPlay);
+			
+			GlobalServer.addEventListener(GlobalServerEvent.PLAYER_PLAY_PAUSE, playerPlayPause);
+			
 			definedPlayer.bufferTime = 30;
 			definedPlayer.play();
 			
@@ -294,6 +291,11 @@ package
 			definedPlayer.volume(Number(event.data));
 		}
 		
+		private function playerPlayPause(event:GlobalServerEvent):void
+		{
+			playerPause();
+		}
+		
 		private function playerPlayStart(event:GlobalServerEvent):void
 		{
 			recommend.close();
@@ -331,12 +333,13 @@ package
 			
 			if(definedPlayer.playStatus)
 			{
+				share.close();
 				advertChart.close();
 			}
 			else
 			{
-				advertChart.open();
-				
+				if(!share.panel_open_status)
+					advertChart.open();
 			}
 			
 			controllBar.playStatus = definedPlayer.playStatus;
@@ -414,9 +417,9 @@ package
 			var w:Number = stage.stageWidth;
 			var h:Number = stage.stageHeight
 			if(w < stage.fullScreenWidth)
-				w = minWidth;
+				w = minW;
 			if(h <stage.fullScreenHeight)
-				h = minHeight;
+				h = minH;
 			
 			frontContainer.width = w;
 			frontContainer.height = h;
@@ -430,6 +433,10 @@ package
 			
 			videoScreen.width = mediaInfo.width*scale;
 			videoScreen.height = mediaInfo.height*scale;
+			
+			waterMark.right = (w-videoScreen.width)/2/*+waterMark.width*/;
+			waterMark.top = (h-videoScreen.height)/2/*+waterMark.height*/;
+			
 			recommend.scaleWH(w, h);
 		}
 		
@@ -488,6 +495,10 @@ package
 			share.verticalCenter = 0;
 //			addElement(share);
 //			videoShare = false;
+			waterMark = new WaterMark();
+			waterMark.right = 15;
+			waterMark.top = 15;
+			waterMark.open();
 			
 			IsInit = true;
 		}

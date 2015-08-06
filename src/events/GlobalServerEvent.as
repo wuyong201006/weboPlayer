@@ -13,6 +13,8 @@ package events
 		public static var VIDEO_SHARE_REMOVE:String = "video_share_remove";
 		
 		public static var RECOMMEND_PLAY:String="recommend_play";
+		
+		public static var PLAYER_PLAY_PAUSE:String = "player_play_pause";
 		public function GlobalServerEvent(type:String, data:Object=null, bubbles:Boolean=false, cancelable:Boolean=false)
 		{
 			super(type, bubbles, cancelable);

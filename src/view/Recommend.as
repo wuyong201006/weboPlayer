@@ -233,24 +233,24 @@ package view
 			return gr;
 		}
 		
-		private var minWidth:Number = 482;
-		private var minHeight:Number = 271;
+		private var minW:Number = 482;
+		private var minH:Number = 271;
 		public function scaleWH(width:Number, height:Number):void
 		{
 			if(stage == null)return;
 			
 			if(width < stage.fullScreenWidth)
-				this.width = minWidth;
+				this.width = minW;
 			else
 				this.width = width;
 				
 			if(height < stage.fullScreenHeight)
-				this.height = minHeight;
+				this.height = minH;
 			else
 				this.height = height;
 			
-			var perw:Number = width / minWidth;
-			var perh:Number = height / minHeight;
+			var perw:Number = width / minW;
+			var perh:Number = height / minH;
 			var scale:Number = perw < perh ? perw : perh;
 			
 			_scale = scale;
@@ -454,8 +454,8 @@ class RecommendUnit extends Group
 		}
 	}
 	
-	private var minWidth:Number=190;
-	private var minHeight:Number = 108;
+//	private var minWidth:Number=190;
+//	private var minHeight:Number = 108;
 	public function scaleWH():void
 	{
 		var perw:Number = this.width / minWidth;

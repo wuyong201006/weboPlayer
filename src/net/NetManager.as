@@ -57,7 +57,7 @@ package net
 		
 		private  function complete(event:Event):void
 		{
-			if(_loadCall)
+			if(_loadCall != null)
 				_loadCall.call(null, event.target.loader.content);
 		}
 	}

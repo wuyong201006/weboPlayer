@@ -4,11 +4,17 @@ package view
 	
 	public class BasePanel extends Group
 	{
+		private var _panel_open_status:Boolean=false;
 		public function BasePanel()
 		{
 			super();
 		}
 		
+		public function get panel_open_status():Boolean
+		{
+			return _panel_open_status;
+		}
+
 		public function open():void
 		{
 			addToScene();
@@ -24,6 +30,7 @@ package view
 		
 		private function addToScene():void
 		{
+			_panel_open_status = true;
 			if(this is LoadingBar || this is Recommend)
 			{
 				Main.main.frontContainer.addElement(this);
@@ -36,15 +43,17 @@ package view
 		
 		private function removeToScene():void
 		{
-			if(Main.main.frontContainer.getElementIndex(this) < 0)
-				return;
+			_panel_open_status = false;
+			
 			if(this is LoadingBar || this is Recommend)
 			{
-				Main.main.frontContainer.removeElement(this);
+				if(Main.main.frontContainer.getElementIndex(this) >= 0)
+					Main.main.frontContainer.removeElement(this);
 			}
 			else
 			{
-				Main.main.behindContainer.removeElement(this);
+				if(Main.main.behindContainer.getElementIndex(this) >= 0)
+					Main.main.behindContainer.removeElement(this);
 			}
 		}
 	}

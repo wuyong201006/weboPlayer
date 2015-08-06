@@ -68,6 +68,11 @@ package view
 		
 		private function clickHtml(event:MouseEvent):void
 		{
+			var htmlUrl:String = NetConstant.VIDEOSHARE_HTMLURL+Main.main.playerParams.id;
+			copy.text = htmlUrl;
+			
+			Clipboard.generalClipboard.clear();
+			Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT, htmlUrl);
 		}
 		
 		private function clickSwf(event:MouseEvent):void

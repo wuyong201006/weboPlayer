@@ -260,12 +260,12 @@ package view
 			volumeOpenBtn.scaleY = volumeCloseBtn.scaleY = Number(ocScaleValue.toFixed(2));
 		}
 		
-		private const minWidht:Number = 482;
-		private const minHeight:Number = 355;
+		private const minW:Number = 482;
+		private const minH:Number = 355;
 		public function scaleWidthAndHeight(width:Number, height:Number):void
 		{
-			var perw:Number = width / minWidth;
-			var perh:Number = height / minHeight;
+			var perw:Number = width / minW;
+			var perh:Number = height / minH;
 			var scale:Number = perw < perh ? perw : perh;
 			
 			

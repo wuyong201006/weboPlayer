@@ -55,6 +55,7 @@ package view
 		private function clickShare(event:MouseEvent):void
 		{
 			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.VIDEO_SHARE_ADD));
+			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_PAUSE));
 		}
 		
 		private function clickSearch(event:MouseEvent):void

@@ -177,7 +177,7 @@ package view
 		
 		private function clickGlobal(event:MouseEvent):void
 		{
-			NetManager.sendURL(NetConstant.GLOABLPLAYERURL);
+			NetManager.getInstance().sendURL(NetConstant.GLOABLPLAYERURL);
 		}
 		
 		private function frameClick(event:MouseEvent):void

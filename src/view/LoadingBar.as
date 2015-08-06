@@ -12,7 +12,7 @@ package view
 	/**
 	 *	加载进度条 
 	 */
-	public class LoadingBar extends Group
+	public class LoadingBar extends BasePanel
 	{
 		private var progressBar:ProgressBar;
 		private var turn:UIAsset;
@@ -87,6 +87,16 @@ package view
 			turn.top = -13;
 			tg.addElement(turn);
 //			startTurn();
+		}
+		
+		override public function open():void
+		{
+			super.open();
+		}
+		
+		override public function close():void
+		{
+			super.close();	
 		}
 		
 		public function destory():void

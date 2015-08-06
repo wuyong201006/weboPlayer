@@ -6,11 +6,16 @@ package view
 	/**
 	 *	广告图 
 	 */
-	public class AdvertChart extends Group
+	public class AdvertChart extends BasePanel
 	{
 		public function AdvertChart()
 		{
 			super();
+		}
+		
+		private function loadImg():void
+		{
+			
 		}
 		
 		override protected function createChildren():void
@@ -26,6 +31,16 @@ package view
 			img.verticalCenter = 0;
 			img.skinName = new pop();
 			addElement(img);
+		}
+		
+		override public function open():void
+		{
+			super.open();
+		}
+		
+		override public function close():void
+		{
+			super.close();	
 		}
 	}
 }

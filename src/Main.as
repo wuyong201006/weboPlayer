@@ -26,6 +26,7 @@ package
 	import net.HttpRequest;
 	
 	import org.flexlite.domCore.Injector;
+	import org.flexlite.domUI.components.Group;
 	import org.flexlite.domUI.core.Theme;
 	import org.flexlite.domUI.managers.SystemManager;
 	import org.flexlite.domUI.skins.themes.VectorTheme;
@@ -37,11 +38,14 @@ package
 	import view.TopBar;
 	import view.VideoShare;
 	
-	[SWF(width="482", height="355", frameRate="25"]
+	[SWF(width="482", height="355", frameRate="25", backgroundColor="#000000"]
 	public class Main extends SystemManager
 	{
 		private const minWidth:Number = 482;
 		private const minHeight:Number = 355;
+		
+		private var _frontContainer:Group;
+		private var _behindContainer:Group;
 		
 		private var loadingBar:LoadingBar;
 		private var advertChart:AdvertChart;
@@ -53,10 +57,18 @@ package
 		
 		private var definedPlayer:DefinedPlayer;
 		private var playerUrl:String = "http://www.tvm.cn/weibo/get_data?url=www.tvm.cn/ishare/play/play.html?id=";
-		private var playerParams:Object={
-			url:null//(mp4url, druation)
+		private var _playerParams:Object={
+			id:null//(mp4url)
 		}
-			
+		
+		private var _playerInfo:Object={
+			url:null,//(mp4url)
+			thumburl:null,//缩略图
+			title:null,//标题
+			summary:null,//总结
+			swfUrl:null,//嵌入swf
+			linksUrl:null//来源链接
+		}
 		private var IsPlayer:Boolean=true;//是否第一次播放
 		public function Main()
 		{
@@ -67,9 +79,47 @@ package
 			//navigateToURL( (new URLRequest("javascript:window.external.addFavorite('http://qq.com', '收藏名字')")), "_self");
 			addEventListener(Event.ADDED_TO_STAGE, addedToStage);
 			
-			playerParams.url = this.loaderInfo.parameters.url;
+			playerParams.id = this.loaderInfo.parameters.url;
 			
-			playerParams.url = 566389;
+			playerParams.id = 566389;
+			
+			_main = this;
+		}
+		
+		private static var _main:Main
+
+		public function get playerParams():Object
+		{
+			return _playerParams;
+		}
+
+		public function set playerParams(value:Object):void
+		{
+			_playerParams = value;
+		}
+
+		public static function get main():Main
+		{
+			return _main;
+		}
+		
+		public function get frontContainer():Group
+		{
+			if(_frontContainer == null)
+				_frontContainer = new Group();
+			return _frontContainer;
+		}
+		
+		public function get playerInfo():Object
+		{
+			return _playerInfo;	
+		}
+		
+		public function get behindContainer():Group
+		{
+			if(_behindContainer == null)
+				_behindContainer = new Group();
+			return _behindContainer;
 		}
 		
 		private function addedToStage(event:Event):void
@@ -83,21 +133,11 @@ package
 		}
 		
 		
-		private function requestPlayer():void
+		public function requestPlayer():void
 		{
-//			var request:URLRequest = new URLRequest(playerUrl);
-//			
-//			request.method = URLRequestMethod.GET;
-//			request.data = playerParams.url;
-//			
-//			var loader:URLLoader = new URLLoader();
-//			loader.dataFormat = URLLoaderDataFormat.TEXT;
-//			loader.addEventListener(Event.COMPLETE, complete);
-//			loader.addEventListener(IOErrorEvent.IO_ERROR, ioError);
-//			loader.load(request);
 			var http:HttpRequest = new HttpRequest();
 			http.addEventListener(HttpEvent.HTTPDATA_SUCCESS, complete);
-			http.connect(playerUrl+playerParams.url);
+			http.connect(playerUrl+playerParams.id);
 		}
 		
 		private function ioError(event:Event):void
@@ -108,8 +148,17 @@ package
 		private function complete(event:HttpEvent):void
 		{
 			var loader:URLLoader = event.data as URLLoader;
-			playerParams.url = parseContent("TVM", loader.data);
-			if(definedPlayer == null)
+			var data:Object = parseContent("TVM", loader.data);
+			
+			playerInfo.url = data.stream.url;
+			playerInfo.title = data.display_name;
+			playerInfo.summary = data.summary;
+			var imageUrl:Object = data.image.url;
+			playerInfo.thumburl = String(imageUrl).replace(/\n/g, "").replace(/^\s+|\s+$/g, "").replace(/^s*|s*$/g, "").replace(/\s/g, "");
+			playerInfo.swfUrl =data.embed_code;
+			playerInfo.linksUrl = data.links.url;
+			
+//			if(definedPlayer == null)
 				initPlayer();
 		}
 		
@@ -126,11 +175,11 @@ package
 		
 		private function initPlayer():void
 		{
-			if(playerParams.url)
+			if(playerInfo.url)
 			{
 				//				controllBar.updateProgressBarMaximum(playerParams.content.duration);
 				
-				definedPlayer = new DefinedPlayer(playerParams.url.stream.url, 0);
+				definedPlayer = new DefinedPlayer(playerInfo.url, 0);
 				videoScreen.attatchNetStream(definedPlayer.netStream);
 			}
 			
@@ -143,16 +192,20 @@ package
 			controllBar.addEventListener(PlayerEvent.CONTROLLBAR_PLAY, controllBarPlay);
 			controllBar.addEventListener(PlayerEvent.VOLUME_UPDATE, volumeUpdate);
 //			
-			share.addEventListener(PlayerEvent.VIDEO_SHARE_ADD, shareAdd);
-			share.addEventListener(PlayerEvent.VIDEO_SHARE_REMOVE, shareRemove);
+			GlobalServer.addEventListener(GlobalServerEvent.VIDEO_SHARE_ADD, shareAdd);
+			GlobalServer.addEventListener(GlobalServerEvent.VIDEO_SHARE_REMOVE, shareRemove);
 			
 			
 			GlobalServer.addEventListener(GlobalServerEvent.PLAYER_PLAY_START, playerPlayStart);
 			GlobalServer.addEventListener(GlobalServerEvent.PLAYER_PLAY_STOP, playerPlayStop);
 			GlobalServer.addEventListener(GlobalServerEvent.PLAYER_SEEK_UPDATE, playerSeekUpdate);
+			
+			GlobalServer.addEventListener(GlobalServerEvent.RECOMMEND_PLAY, recommendPlay);
 			definedPlayer.bufferTime = 30;
 			definedPlayer.play();
-			loadingBarStatus = true;
+			
+			loadingBar.open();
+			
 			controllBar.playStatus = true;
 //			playerStatus = !playerParams.auto_play;
 //			
@@ -161,6 +214,13 @@ package
 //			{
 //				ExternalInterface.addCallback("seek", seekExternal);//秒
 //			}
+		}
+		
+		private function recommendPlay(event:GlobalServerEvent):void
+		{
+			playerParams.id = event.data;
+			
+			requestPlayer();
 		}
 		
 		private var rateCount:int=0;
@@ -200,15 +260,13 @@ package
 		
 		private function bufferUpdate(event:PlayerEvent):void
 		{
-			trace("buff"+event.data);
-			
 			var buffTime:Number = Number(event.data)%2;
 			loadingBar.updateProgress(buffTime, 2);
 		}
 		
 		private function removeLoadBar(event:PlayerEvent):void
 		{
-			loadingBarStatus = false;
+			loadingBar.close();
 		}
 		
 		private function controllBarUpdate(event:PlayerEvent):void
@@ -229,8 +287,7 @@ package
 		
 		private function controllBarPlay(event:PlayerEvent):void
 		{
-			advertChartStatus = Boolean(event.data);
-			definedPlayer.pause();
+			playerPause();
 		}
 		
 		private function volumeUpdate(event:PlayerEvent):void
@@ -240,46 +297,50 @@ package
 		
 		private function playerPlayStart(event:GlobalServerEvent):void
 		{
-			recommendStatus = false;
+			recommend.close();
 			
 			fullScreenChangeHandler(null);
 		}
 		
 		private function playerPlayStop(event:GlobalServerEvent):void
 		{
-			recommendStatus = true;
+			recommend.open();
 		}
 		
-		private function shareAdd(event:PlayerEvent):void
+		private function shareAdd(event:GlobalServerEvent):void
 		{
-			videoShare = true;
+			share.open();
 		}
 		
-		private function shareRemove(event:PlayerEvent):void
+		private function shareRemove(event:GlobalServerEvent):void
 		{
-			videoShare = false;
 		}
 		
-		private function set loadingBarStatus(value:Boolean):void
+		private function clickPlayPause(event:MouseEvent):void
 		{
-			loadingBar.visible = value;
+			playerPause();
 		}
+		
 		/**
-		 *	广告图状态 
+		 *	播放器暂停播放 
 		 */
-		private function set advertChartStatus(value:Boolean):void
+		private function playerPause():void
 		{
-			advertChart.visible = value;
-		}
-		
-		private function set recommendStatus(value:Boolean):void
-		{
-			recommend.visible = value;	
-		}
-		
-		private function set videoShare(value:Boolean):void
-		{
-			share.visible = value;
+			if(definedPlayer == null)return;
+			
+			definedPlayer.pause();
+			
+			if(definedPlayer.playStatus)
+			{
+				advertChart.close();
+			}
+			else
+			{
+				advertChart.open();
+				
+			}
+			
+			controllBar.playStatus = definedPlayer.playStatus;
 		}
 		
 		private var _userActive:Boolean;
@@ -358,12 +419,18 @@ package
 			if(h <stage.fullScreenHeight)
 				h = minHeight;
 			
+			frontContainer.width = w;
+			frontContainer.height = h;
+			
+			behindContainer.width = w;
+			behindContainer.height = h;
+			
 			var perw:Number = w / mediaInfo.width;
 			var perh:Number = h / mediaInfo.height;
 			var scale:Number = perw < perh ? perw : perh;
 			
-			videoScreen.width = w*scale;
-			videoScreen.height = h*scale;
+			videoScreen.width = mediaInfo.width*scale;
+			videoScreen.height = mediaInfo.height*scale;
 			recommend.scaleWH(w, h);
 		}
 		
@@ -377,6 +444,12 @@ package
 			videoScreen.horizontalCenter = 0;
 			videoScreen.verticalCenter = 0;
 			addElement(videoScreen);
+			videoScreen.buttonMode = true;
+			videoScreen.addEventListener(MouseEvent.CLICK, clickPlayPause);
+			
+//			frontContainer.horizontalCenter = 0;
+//			frontContainer.verticalCenter = 0;
+			addElement(frontContainer);
 			
 			topBar = new TopBar();
 			topBar.percentWidth = 100;
@@ -387,14 +460,13 @@ package
 			loadingBar = new LoadingBar();
 			loadingBar.horizontalCenter = 0;
 			loadingBar.top = 40;
-			addElement(loadingBar);
-			loadingBarStatus = false;
+//			addElement(loadingBar);
+//			loadingBarStatus = false;
 			
 			recommend = new Recommend();
 			recommend.x = 0;
 			recommend.y = 40;
-			addElement(recommend);
-			recommendStatus = false;
+//			recommend.open();
 			
 			controllBar = new ControllBar();
 			controllBar.percentWidth = 100;
@@ -402,17 +474,21 @@ package
 			controllBar.bottom = 0;
 			addElement(controllBar);
 			
+//			behindContainer.horizontalCenter = 0;
+//			behindContainer.verticalCenter = 0;
+			addElement(behindContainer);
+			
 			advertChart = new AdvertChart();
 			advertChart.horizontalCenter = 0;
 			advertChart.verticalCenter = 0;
-			addElement(advertChart);
-			advertChartStatus = false;
+//			addElement(advertChart);
+//			advertChartStatus = false;
 			
 			share = new VideoShare();
 			share.horizontalCenter = 0;
 			share.verticalCenter = 0;
-			addElement(share);
-			videoShare = false;
+//			addElement(share);
+//			videoShare = false;
 			
 			IsInit = true;
 		}

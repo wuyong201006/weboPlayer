@@ -16,8 +16,6 @@ package events
 		
 		public static var CONTROLLBAR_UPDATE:String = "controllBar_update";
 		public static var CONTROLLBAR_PLAY:String = "controllbar_play";
-		public static var VIDEO_SHARE_ADD:String = "video_share_add";
-		public static var VIDEO_SHARE_REMOVE:String = "video_share_remove";
 		
 		public function PlayerEvent(type:String, data:Object=null, bubbles:Boolean=false, cancelable:Boolean=false)
 		{

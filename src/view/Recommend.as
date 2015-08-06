@@ -6,9 +6,16 @@ package view
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.events.TimerEvent;
+	import flash.net.URLLoader;
 	import flash.utils.Timer;
 	
 	import component.skin.button.PlayerButtonSkin;
+	
+	import constant.NetConstant;
+	
+	import events.HttpEvent;
+	
+	import net.HttpRequest;
 	
 	import org.flexlite.domUI.components.Button;
 	import org.flexlite.domUI.components.Group;
@@ -19,7 +26,7 @@ package view
 	/**
 	 *	推荐页 
 	 */
-	public class Recommend extends Group
+	public class Recommend extends BasePanel
 	{
 		private var container:Group;
 		
@@ -55,13 +62,37 @@ package view
 		{
 			createTimer();
 			
-			var test:Vector.<VideoInfo> = new Vector.<VideoInfo>();
-			for(var i:int=0;i<7;i++)
+//			var test:Vector.<VideoInfo> = new Vector.<VideoInfo>();
+//			for(var i:int=0;i<7;i++)
+//			{
+//				test.push(new VideoInfo());
+//			}
+//			
+//			videoList = test;
+		}
+		
+		private function requestPlayerList():void
+		{
+			var http:HttpRequest = new HttpRequest();
+			http.addEventListener(HttpEvent.HTTPDATA_SUCCESS, complete);
+			var data:Object = "alt=json&count=4&i=tv&id="+566389+"&startPage=1&fields=id,published,content,title,t:props,media:group,t:rtype,summary";
+			http.connect(NetConstant.RECOMMENDURL+data);
+		}
+		
+		private function complete(event:HttpEvent):void
+		{
+			var loader:URLLoader = event.data as URLLoader;
+			var data:Object = JSON.parse(loader.data);
+			var datas:Object = data.feed.entry;
+			
+			var list:Vector.<VideoInfo> = new Vector.<VideoInfo>();
+			for(var i:int=0;i<datas.length;i++)
 			{
-				test.push(new VideoInfo());
+				var videoInfo:VideoInfo = new VideoInfo(datas[i]);
+				list.push(videoInfo);
 			}
 			
-			videoList = test;
+			videoList = list;
 		}
 		
 		public function get scale():Number
@@ -162,12 +193,12 @@ package view
 //			TweenLite.delayedCall(2, function():void{
 			if(lastRecommend != null)
 			{
-				TweenLite.to(lastRecommend,  2, {x:IsLeft ? -wid : wid, ease:Linear.ease, onComplete:function():void{
+				TweenLite.to(lastRecommend,  1, {x:IsLeft ? -wid : wid, ease:Linear.ease, onComplete:function():void{
 					removeRecommend(lastRecommend);
 				}});
 			}
 			
-			TweenLite.to(curRecommend, 2, {x:0, ease:Linear.ease, onComplete:function():void{
+			TweenLite.to(curRecommend, 1, {x:0, ease:Linear.ease, onComplete:function():void{
 				lastRecommend = curRecommend;
 				lastIndex = curIndex;
 				
@@ -206,6 +237,8 @@ package view
 		private var minHeight:Number = 271;
 		public function scaleWH(width:Number, height:Number):void
 		{
+			if(stage == null)return;
+			
 			if(width < stage.fullScreenWidth)
 				this.width = minWidth;
 			else
@@ -225,7 +258,7 @@ package view
 			if(bg != null)
 			{
 				bg.width = 482*scale;				
-				bg.height = 271*scale;
+				bg.height = height/*271*scale*/;
 			}
 			
 			if(container != null)
@@ -281,7 +314,7 @@ package view
 			bg.fillColor = 0x000000;
 			bg.width = /*percentWidth*/482*scale;
 			bg.height = 271*scale;
-//			bg.alpha = 0.6;
+			bg.alpha = 0.6;
 			addElement(bg);
 			
 			container = new Group();
@@ -324,6 +357,18 @@ package view
 			 }
 		 }
 		 
+		 override public function open():void
+		 {
+			 super.open();
+			 
+			 requestPlayerList();
+		 }
+		 
+		 override public function close():void
+		 {
+			super.close(); 
+		 }
+		 
 		 public function destory():void
 		 {
 			 timer && timer.stop();
@@ -331,13 +376,22 @@ package view
 	}
 }
 
+import flash.display.Bitmap;
+import flash.events.Event;
 import flash.events.MouseEvent;
+import flash.net.URLLoader;
 
 import component.RecommendSkinUnit;
 import component.skin.button.RecommendButtonSkin;
 
+import constant.NetConstant;
+
 import events.GlobalServer;
 import events.GlobalServerEvent;
+import events.HttpEvent;
+
+import net.HttpRequest;
+import net.NetManager;
 
 import org.flexlite.domUI.components.Button;
 import org.flexlite.domUI.components.Group;
@@ -381,7 +435,7 @@ class RecommendUnit extends Group
 	
 	private function playVideo(event:MouseEvent):void
 	{
-		
+		GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.RECOMMEND_PLAY, videoInfo.id));
 	}
 	
 	private function clickHandler(event:MouseEvent):void
@@ -389,12 +443,13 @@ class RecommendUnit extends Group
 		switch(event.target)
 		{
 			case rePlay:
-				GlobalServer.dispatchEvent(new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_START));
 				GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_SEEK_UPDATE, 0));
+				GlobalServer.dispatchEvent(new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_START));
 				break;
 			case store:
 				break;
 			case share:
+				GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.VIDEO_SHARE_ADD));
 				break;
 		}
 	}
@@ -445,7 +500,12 @@ class RecommendUnit extends Group
 			addElement(video);
 			video.percentWidth = 100;
 			video.percentHeight = 100;
+			video.buttonMode = true;
 			video.addEventListener(MouseEvent.CLICK, playVideo);
+			
+			NetManager.getInstance().loadImg(videoInfo.thumburl, function(bit:Bitmap):void{
+				video.skinName = bit
+			});
 		}
 		else
 		{

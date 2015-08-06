@@ -23,24 +23,32 @@ package net
 		private var _druation:Number = 0;
 		private var _netStream:NetStream;
 		
+		private var _playStatus:Boolean=false;//播放状态
 		private var heartbeat:Timer = new Timer(100);
 		public function DefinedPlayer(url:String, druation:Number)
 		{
 			_url = url;
 //			_druation = druation;
-			
 			var netConnection:NetConnection = new NetConnection();
 			netConnection.connect(null);
 			_netStream = new NetStream(netConnection);
-			_netStream.client = {onMetaData:this.onMetaData, onCuePoint:this.onCuePoint};
+			_netStream.client = {onMetaData:this.onMetaData, onCuePoint:this.onCuePoint, onPlayStatus:this.onPlayStatus};
 			_netStream.addEventListener(NetStatusEvent.NET_STATUS, netStreamStatus);
 			
 			heartbeat.addEventListener(TimerEvent.TIMER, onHeartbear);
-			
-			_netStream.bufferTime
 		}
 		
 		
+		public function get playStatus():Boolean
+		{
+			return _playStatus;
+		}
+
+		public function set playStatus(value:Boolean):void
+		{
+			_playStatus = value;
+		}
+
 		public function get netStream():NetStream
 		{
 			return _netStream;
@@ -68,7 +76,10 @@ package net
 		private var timeOut:Number;
 		public function play():void
 		{
+			playStatus = !playStatus;
+			
 			_netStream.play(_url);
+			
 			if(!IsBufferFull)
 			{
 				var dp:DefinedPlayer = this;
@@ -83,6 +94,7 @@ package net
 		
 		public function pause():void
 		{
+			playStatus = !playStatus;
 			_netStream.togglePause();
 		}
 		
@@ -170,6 +182,11 @@ package net
 		
 		private function onCuePoint(info:Object) : void
 		{
+		}
+		
+		private function onPlayStatus(info:Object):void
+		{
+			trace(info);
 		}
 	}
 }

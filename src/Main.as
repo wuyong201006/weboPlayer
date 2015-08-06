@@ -148,29 +148,28 @@ package
 		private function complete(event:HttpEvent):void
 		{
 			var loader:URLLoader = event.data as URLLoader;
-			var data:Object = parseContent("TVM", loader.data);
+			var data:Object = JSON.parse(loader.data);
 			
-			playerInfo.url = data.stream.url;
 			playerInfo.title = data.display_name;
+			playerInfo.url = data.stream.url;
 			playerInfo.summary = data.summary;
-			var imageUrl:Object = data.image.url;
-			playerInfo.thumburl = String(imageUrl).replace(/\n/g, "").replace(/^\s+|\s+$/g, "").replace(/^s*|s*$/g, "").replace(/\s/g, "");
+			var imageUrl:String = data.image.url;
+			playerInfo.thumburl = String(imageUrl).replace(/\s/g, "").replace("[\\x00-\\x20]", "");
 			playerInfo.swfUrl =data.embed_code;
 			playerInfo.linksUrl = data.links.url;
 			
+			var str:String = "http://video.cloud.tvmining.com/TVM/JPG/WuXiNews/2015/07/21/"+
+ "WuXiNews_1500000_20150721_14164482_0.jpg";
+			str ="http://video.cloud.tvmining.com/TVM/JPG/WuXiNews/2015/07/21/"+"\t\n\r"
+				+" WuXiNews_1500000_20150721_14164482_0.jpg";
+			for(var i:int=0;i<str.length;i++)
+			{
+				trace("index:"+i+"str:"+str.charAt(i));
+			}
+			var ar:Array = str.split("[\\x00-\\x20]");
+			var s:String = ar.join("");
 //			if(definedPlayer == null)
-				initPlayer();
-		}
-		
-		//parse url 		
-		private function parseContent(keyStr:String, decryptStr:String):Object
-		{
-			
-			//反转，解码
-//			var decryptArray:Array = decryptStr.split("");
-//			var rev:Array = decryptArray.reverse();
-//			var dec:String = rev.join("");
-			return JSON.parse(decryptStr);
+			initPlayer();
 		}
 		
 		private function initPlayer():void

@@ -20,7 +20,7 @@ package component.skin.progressBar
 			graphics.endFill();
 			graphics.lineStyle();
 			drawRoundRect(
-				0, 0, w, h, 0,
+				0, 0, w, h, 2,
 				0x86878C, 1,
 				verticalGradientMatrix(0, 0, w, h)); 
 			if(w>5)

@@ -11,6 +11,9 @@ package events
 		public static var PLAYER_UPDATE:String = "player_update";
 		public static var VOLUME_UPDATE:String = "volume_update";
 		public static var MEDIA_DURATION_UPDATE:String = "media_duration_update";
+		public static var PLAYER_BUFFER_UPDATE:String = "player_buffer_update";
+		public static var PLAYER_BUFFER_FULL:String = "player_buffer_full";
+		
 		public static var CONTROLLBAR_UPDATE:String = "controllBar_update";
 		public static var CONTROLLBAR_PLAY:String = "controllbar_play";
 		

@@ -6,9 +6,16 @@ package view
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.events.TimerEvent;
+	import flash.net.URLLoader;
 	import flash.utils.Timer;
 	
 	import component.skin.button.PlayerButtonSkin;
+	
+	import constant.NetConstant;
+	
+	import events.HttpEvent;
+	
+	import net.HttpRequest;
 	
 	import org.flexlite.domUI.components.Button;
 	import org.flexlite.domUI.components.Group;
@@ -19,7 +26,7 @@ package view
 	/**
 	 *	推荐页 
 	 */
-	public class Recommend extends Group
+	public class Recommend extends BasePanel
 	{
 		private var container:Group;
 		
@@ -39,9 +46,14 @@ package view
 		private var timer:Timer;
 		
 		private var delayTime:int;
+		
+		private var _scale:Number=1;
 		public function Recommend()
 		{
 			super();
+			
+			this.width = minWidth;
+			this.height = minHeight;
 			
 			addEventListener(Event.ADDED_TO_STAGE, addedToStage);
 		}
@@ -50,13 +62,42 @@ package view
 		{
 			createTimer();
 			
-			var test:Vector.<VideoInfo> = new Vector.<VideoInfo>();
-			for(var i:int=0;i<7;i++)
+//			var test:Vector.<VideoInfo> = new Vector.<VideoInfo>();
+//			for(var i:int=0;i<7;i++)
+//			{
+//				test.push(new VideoInfo());
+//			}
+//			
+//			videoList = test;
+		}
+		
+		private function requestPlayerList():void
+		{
+			var http:HttpRequest = new HttpRequest();
+			http.addEventListener(HttpEvent.HTTPDATA_SUCCESS, complete);
+			var data:Object = "alt=json&count=4&i=tv&id="+566389+"&startPage=1&fields=id,published,content,title,t:props,media:group,t:rtype,summary";
+			http.connect(NetConstant.RECOMMENDURL+data);
+		}
+		
+		private function complete(event:HttpEvent):void
+		{
+			var loader:URLLoader = event.data as URLLoader;
+			var data:Object = JSON.parse(loader.data);
+			var datas:Object = data.feed.entry;
+			
+			var list:Vector.<VideoInfo> = new Vector.<VideoInfo>();
+			for(var i:int=0;i<datas.length;i++)
 			{
-				test.push(new VideoInfo());
+				var videoInfo:VideoInfo = new VideoInfo(datas[i]);
+				list.push(videoInfo);
 			}
 			
-			videoList = test;
+			videoList = list;
+		}
+		
+		public function get scale():Number
+		{
+			return _scale;
 		}
 		
 		public function get videoList():Vector.<VideoInfo>
@@ -141,7 +182,7 @@ package view
 			if(IsClick)
 				IsLeft = curIndex > lastIndex;
 			else
-				IsLeft = false;
+				IsLeft = true;
 			
 			IsClick = false;
 			var wid:Number = this.width;
@@ -152,12 +193,12 @@ package view
 //			TweenLite.delayedCall(2, function():void{
 			if(lastRecommend != null)
 			{
-				TweenLite.to(lastRecommend,  2, {x:IsLeft ? -wid : wid, ease:Linear.ease, onComplete:function():void{
+				TweenLite.to(lastRecommend,  1, {x:IsLeft ? -wid : wid, ease:Linear.ease, onComplete:function():void{
 					removeRecommend(lastRecommend);
 				}});
 			}
 			
-			TweenLite.to(curRecommend, 2, {x:0, ease:Linear.ease, onComplete:function():void{
+			TweenLite.to(curRecommend, 1, {x:0, ease:Linear.ease, onComplete:function():void{
 				lastRecommend = curRecommend;
 				lastIndex = curIndex;
 				
@@ -169,39 +210,116 @@ package view
 		private function draw(list:Vector.<VideoInfo>):Group
 		{
 			var gr:Group = new Group();
-			gr.width = 390;
-			gr.height = 225;
+			gr.percentWidth = 100;
+			gr.percentHeight = 100;
+//			gr.width = 390*scale;
+//			gr.height = 225*scale;
 			
 			for(var i:int=0;i<list.length;i++)
 			{
-				var g:RecommendUnit = new RecommendUnit(list[i]);
-				g.left = int(i%2)*(15+190);
-				g.top = int(i/2)*(15+108);
+				var g:RecommendUnit = new RecommendUnit(list[i], scale);
+				g.left = int(i%2)*(15+g.width);
+				g.top = int(i/2)*(15+g.height);
 				gr.addElement(g);
 			}
 			
 			if(curIndex == 0 && list.length < 4)
 			{
-				var group:RecommendUnit = new RecommendUnit(null, false);
-				group.left = 190+15;
-				group.top = 108+15;
+				var group:RecommendUnit = new RecommendUnit(null, scale, false);
+				group.left = group.width+15;
+				group.top = group.height+15;
 				gr.addElement(group);
 			}
 			return gr;
 		}
 		
+		private var minW:Number = 482;
+		private var minH:Number = 271;
+		public function scaleWH(width:Number, height:Number):void
+		{
+			if(stage == null)return;
+			
+			if(width < stage.fullScreenWidth)
+				this.width = minW;
+			else
+				this.width = width;
+				
+			if(height < stage.fullScreenHeight)
+				this.height = minH;
+			else
+				this.height = height;
+			
+			var perw:Number = width / minW;
+			var perh:Number = height / minH;
+			var scale:Number = perw < perh ? perw : perh;
+			
+			_scale = scale;
+			
+			if(bg != null)
+			{
+				bg.width = 482*scale;				
+				bg.height = height/*271*scale*/;
+			}
+			
+			if(container != null)
+			{
+				container.width = 390*scale;
+				container.height = 225*scale;
+			}
+			
+			if(preBtn != null)
+			{
+				preBtn.left = 15*scale;
+				preBtn.scaleX = scale;
+				preBtn.scaleY = scale;				
+			}
+			
+			if(nextBtn != null)
+			{
+				nextBtn.scaleX = scale;
+				nextBtn.scaleY = scale;
+				nextBtn.x = this.width-nextBtn.width-15*scale;
+			}
+			
+			var reWidth:Number = 190*scale;
+			var reHeight:Number = 108*scale;
+			
+			setRecommendWH(reWidth, reHeight, curRecommend);
+			setRecommendWH(reWidth, reHeight, lastRecommend);
+		}
+		
+		private function setRecommendWH(width:Number, height:Number, group:Group):void
+		{
+			if(group != null)
+			{
+				for(var i:int=0;i<group.numChildren;i++)
+				{
+					var re:RecommendUnit = group.getElementAt(i) as RecommendUnit;
+					re.width = width;
+					re.height = height;
+					re.left = int(i%2)*(15+re.width);
+					re.top = int(i/2)*(15+re.height);
+					
+					re.scaleWH();
+				}
+			}
+		}
+		
+		private var bg:Rect;
 		override protected function createChildren():void
 		{
 			super.createChildren();
 			
-			var bg:Rect = new Rect();
+			bg = new Rect();
 			bg.fillColor = 0x000000;
-			bg.width = 482;
-			bg.height = 271;
-//			 bg.alpha = 0.6;
+			bg.width = /*percentWidth*/482*scale;
+			bg.height = 271*scale;
+			bg.alpha = 0.6;
 			addElement(bg);
 			
 			container = new Group();
+			container.width = 390*scale;
+			container.height =  225*scale;
 			container.horizontalCenter = 0;
 			container.verticalCenter = 0;
 			addElement(container);
@@ -216,7 +334,7 @@ package view
 			nextBtn = new Button();
 			nextBtn.width = 17;
 			nextBtn.height = 26;
-			nextBtn.x = 482-15-nextBtn.width;
+			nextBtn.x = this.width-nextBtn.width-15;
 			nextBtn.verticalCenter = 0;
 			nextBtn.skinName = new PlayerButtonSkin(nextPage_normal, nextPage_hover);
 			addElement(nextBtn);
@@ -239,6 +357,18 @@ package view
 			 }
 		 }
 		 
+		 override public function open():void
+		 {
+			 super.open();
+			 
+			 requestPlayerList();
+		 }
+		 
+		 override public function close():void
+		 {
+			super.close(); 
+		 }
+		 
 		 public function destory():void
 		 {
 			 timer && timer.stop();
@@ -246,10 +376,22 @@ package view
 	}
 }
 
+import flash.display.Bitmap;
+import flash.events.Event;
 import flash.events.MouseEvent;
+import flash.net.URLLoader;
 
 import component.RecommendSkinUnit;
 import component.skin.button.RecommendButtonSkin;
+
+import constant.NetConstant;
+
+import events.GlobalServer;
+import events.GlobalServerEvent;
+import events.HttpEvent;
+
+import net.HttpRequest;
+import net.NetManager;
 
 import org.flexlite.domUI.components.Button;
 import org.flexlite.domUI.components.Group;
@@ -260,10 +402,21 @@ import vo.VideoInfo;
 
 class RecommendUnit extends Group
 {
+	private var rePlay:Button;
+	private var store:Button;
+	private var share:Button;
+	
 	private var _videoInfo:VideoInfo;
 	private var _IsVideo:Boolean;
-	public function RecommendUnit(videoInfo:VideoInfo, IsVideo:Boolean=true):void
+	
+	private var _scale:Number;
+	public function RecommendUnit(videoInfo:VideoInfo, scale:Number= 1, IsVideo:Boolean=true):void
 	{
+		super();
+		
+		this.width = minWidth*scale;
+		this.height = minHeight*scale;
+		
 		_videoInfo = videoInfo;
 		_IsVideo = IsVideo;
 		
@@ -282,34 +435,86 @@ class RecommendUnit extends Group
 	
 	private function playVideo(event:MouseEvent):void
 	{
-		
+		GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.RECOMMEND_PLAY, videoInfo.id));
 	}
 	
 	private function clickHandler(event:MouseEvent):void
 	{
-		
+		switch(event.target)
+		{
+			case rePlay:
+				GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_SEEK_UPDATE, 0));
+				GlobalServer.dispatchEvent(new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_START));
+				break;
+			case store:
+				break;
+			case share:
+				GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.VIDEO_SHARE_ADD));
+				break;
+		}
 	}
 	
+//	private var minWidth:Number=190;
+//	private var minHeight:Number = 108;
+	public function scaleWH():void
+	{
+		var perw:Number = this.width / minWidth;
+		var perh:Number = this.height / minHeight;
+		var scale:Number = perw < perh ? perw : perh;
+		
+		if(rePlay != null)
+		{
+			rePlay.scaleX = scale;
+			rePlay.scaleY = scale;
+		}
+		
+		if(store != null)
+		{
+			store.top = 32*scale;
+			store.scaleX = scale;
+			store.scaleY = scale;
+		}
+		if(share != null)
+		{
+			share.left = 82*scale;
+			share.scaleX = scale;
+			share.scaleY = scale;
+		}
+	}
+	
+	private var IsInit:Boolean=false;
 	public function initUI(IsVideo:Boolean=true):void
 	{
+		IsInit = true;
 		if(IsVideo)
 		{
 			var video:UIAsset = new UIAsset();
 //			video.skinName = "";
 			var re:Rect = new Rect();
 			re.fillColor = 0xffffff;
-			re.width = 190;
-			re.height = 108;
+//			re.width = 190;
+//			re.height = 108;
+			re.percentWidth = 100;
+			re.percentHeight = 100;
 			video.skinName = re;
 			addElement(video);
+			video.percentWidth = 100;
+			video.percentHeight = 100;
+			video.buttonMode = true;
 			video.addEventListener(MouseEvent.CLICK, playVideo);
+			
+			NetManager.getInstance().loadImg(videoInfo.thumburl, function(bit:Bitmap):void{
+				video.skinName = bit
+			});
 		}
 		else
 		{
 			 var bg:Rect = new Rect();
  			bg.fillColor = 0x282828;
- 			bg.width = 190;
-			bg.height = 108;
+// 			bg.width = 190;
+//			bg.height = 108;
+			bg.percentWidth = 100;
+			bg.percentHeight = 100;
 // 			bg.alpha = 0.6;
  			addElement(bg);
 			
@@ -321,22 +526,24 @@ class RecommendUnit extends Group
 			var gr:Group = new Group();
 			rect.addElement(gr);
 			
-			var rePlay:Button = new Button();
+			rePlay = new Button();
 			rePlay.skinName = new RecommendButtonSkin(new RecommendSkinUnit(replay_normal, "重播", 0xffffff), new RecommendSkinUnit(replay_hover, "重播", 0xb8d9f6));
 			gr.addElement(rePlay);
 			rePlay.addEventListener(MouseEvent.CLICK, clickHandler);
 			
-			var store:Button = new Button();
+			store = new Button();
 			store.top = 32;
 			store.skinName = new RecommendButtonSkin(new RecommendSkinUnit(store_normal, "收藏", 0xffffff), new RecommendSkinUnit(store_hover, "收藏", 0xb8d9f6));
-			gr.addElement(store);
+//			gr.addElement(store);
 			store.addEventListener(MouseEvent.CLICK, clickHandler);
 			
-			var share:Button = new Button();
+			share = new Button();
 			share.left = 82;
 			share.skinName = new RecommendButtonSkin(new RecommendSkinUnit(share_small_normal, "分享", 0xffffff), new RecommendSkinUnit(share_small_hover, "分享", 0xb8d9f6));
 			rect.addElement(share);
 			share.addEventListener(MouseEvent.CLICK, clickHandler);
+			
+			scaleWH();
 		}
 	}
 	

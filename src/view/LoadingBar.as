@@ -3,8 +3,6 @@ package view
 	import com.greensock.TweenLite;
 	import com.greensock.easing.Linear;
 	
-	import flash.display.Bitmap;
-	
 	import component.skin.progressBar.LoadProgressBarSkin;
 	
 	import org.flexlite.domUI.components.Group;
@@ -14,11 +12,13 @@ package view
 	/**
 	 *	加载进度条 
 	 */
-	public class LoadingBar extends Group
+	public class LoadingBar extends BasePanel
 	{
 		private var progressBar:ProgressBar;
 		private var turn:UIAsset;
 		private var tg:Group;
+		
+		private var tweenLite:TweenLite;
 		public function LoadingBar()
 		{
 			super();
@@ -27,14 +27,26 @@ package view
 		public function updateProgress(curValue:Number, maxValue:Number):void
 		{
 			progressBar.value = curValue/maxValue*100;
+			if(!IsTurn)
+			{
+				IsTurn = true;
+				startTurn();
+			}
 		}
 		
+		private var IsTurn:Boolean = false;
 		private function startTurn():void
 		{
+			
 			if(tg.rotation > 0)
 				tg.rotation = 0;
 			
-			TweenLite.to(tg, 0.5, {rotation:360, ease:Linear.easeNone, onComplete:startTurn});
+			tweenLite = TweenLite.to(tg, 0.5, {rotation:360, ease:Linear.easeNone, onComplete:startTurn});
+		}
+		
+		private function stopTurn():void
+		{
+			tweenLite && tweenLite.kill();
 		}
 		
 		override protected function createChildren():void
@@ -74,8 +86,22 @@ package view
 			turn.left = -13;
 			turn.top = -13;
 			tg.addElement(turn);
-			
-			startTurn();
+//			startTurn();
+		}
+		
+		override public function open():void
+		{
+			super.open();
+		}
+		
+		override public function close():void
+		{
+			super.close();	
+		}
+		
+		public function destory():void
+		{
+			stopTurn();
 		}
 	}
 }

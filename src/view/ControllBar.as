@@ -11,11 +11,16 @@ package view
 	import component.skin.button.PlayButtonSkin;
 	import component.skin.button.PlayerButtonSkin;
 	import component.skin.slider.PlayerHSliderSkin;
+	import component.skin.volumeBar.VolumeHSliderSkin;
 	import component.slider.PlayerHSlider;
+	
+	import constant.NetConstant;
 	
 	import date.DateString;
 	
 	import events.PlayerEvent;
+	
+	import net.NetManager;
 	
 	import org.flexlite.domUI.components.Button;
 	import org.flexlite.domUI.components.Group;
@@ -172,7 +177,7 @@ package view
 		
 		private function clickGlobal(event:MouseEvent):void
 		{
-			
+			NetManager.getInstance().sendURL(NetConstant.GLOABLPLAYERURL);
 		}
 		
 		private function frameClick(event:MouseEvent):void
@@ -255,6 +260,17 @@ package view
 			volumeOpenBtn.scaleY = volumeCloseBtn.scaleY = Number(ocScaleValue.toFixed(2));
 		}
 		
+		private const minW:Number = 482;
+		private const minH:Number = 355;
+		public function scaleWidthAndHeight(width:Number, height:Number):void
+		{
+			var perw:Number = width / minW;
+			var perh:Number = height / minH;
+			var scale:Number = perw < perh ? perw : perh;
+			
+			
+		}
+		
 		override protected function measure():void
 		{
 			super.measure();
@@ -271,15 +287,15 @@ package view
 		{
 			super.createChildren();
 			
-//			var bg:Rect = new Rect();
-//			bg.fillColor = 0x000000;
-//			bg.percentHeight = bg.percentWidth = 100;
-//			bg.alpha = 0.6;
-//			addElement(bg);
-			var bg:UIAsset = new UIAsset();
+			var bg:Rect = new Rect();
+			bg.fillColor = 0x1A1E27;
 			bg.percentHeight = bg.percentWidth = 100;
-			bg.skinName = new back_bottom;
+//			bg.alpha = 0.6;
 			addElement(bg);
+//			var bg:UIAsset = new UIAsset();
+//			bg.percentHeight = bg.percentWidth = 100;
+//			bg.skinName = new back_bottom;
+//			addElement(bg);
 			
 			
 			playBtn = new Button();
@@ -356,15 +372,16 @@ package view
 			volumeCloseBtn.visible = false;
 			
 			volumeBar = new HSlider();
-			volumeBar.width = 80;
+			volumeBar.width = 74;
 			volumeBar.verticalCenter = 0;
 			volumeBar.left = 20;
 			volumeBar.minimum = 0;
 			volumeBar.maximum = 1;
 			volumeBar.stepSize = 0.1;
-//			volumeBar.addEventListener(MouseEvent.ROLL_OUT, rollOut);
-			volumeBar.addEventListener(Event.CHANGE,volumeBarChanged);
+			volumeBar.skinName = VolumeHSliderSkin;
 			volumeContainer.addElement(volumeBar);
+			volumeBar.addEventListener(Event.CHANGE,volumeBarChanged);
+			
 //			volumeBar.visible = false;
 			TweenLite.delayedCall(0.5, function():void{
 				volumeBar.value = 0.5;
@@ -372,10 +389,11 @@ package view
 			})
 				
 			var g:Group = new Group();
-			g.right = 20;
-			g.verticalCenter = 0;
-			addElement(g);
-			g.addEventListener(MouseEvent.CLICK, clickGlobal);
+//			g.right = 20;
+//			g.verticalCenter = 0;
+//			addElement(g);
+//			g.buttonMode = true;
+//			g.addEventListener(MouseEvent.CLICK, clickGlobal);
 			
 			var glogo:UIAsset = new UIAsset();
 			glogo.skinName = new logo;
@@ -389,6 +407,13 @@ package view
 			gTxt.size = 14;
 			gTxt.bold = true;
 			g.addElement(gTxt);
+			
+			var global:Button = new Button();
+			global.right = 20;
+			global.verticalCenter = 0;
+			global.skinName = g;
+			addElement(global);
+			global.addEventListener(MouseEvent.CLICK, clickGlobal);
 			
 			progressBar = new PlayerHSlider();
 			progressBar.percentWidth = 100;

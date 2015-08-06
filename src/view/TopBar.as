@@ -8,6 +8,10 @@ package view
 	
 	import component.skin.button.ShareBigButtonSkin;
 	
+	import events.GlobalServer;
+	import events.GlobalServerEvent;
+	import events.PlayerEvent;
+	
 	import org.flexlite.domUI.components.Button;
 	import org.flexlite.domUI.components.EditableText;
 	import org.flexlite.domUI.components.Group;
@@ -50,7 +54,8 @@ package view
 		
 		private function clickShare(event:MouseEvent):void
 		{
-			
+			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.VIDEO_SHARE_ADD));
+			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_PAUSE));
 		}
 		
 		private function clickSearch(event:MouseEvent):void
@@ -75,28 +80,17 @@ package view
 		{
 			super.createChildren();
 			
-//			var bg:Rect = new Rect();
-//			bg.fillColor = 0x0;
+			var bg:Rect = new Rect();
+			bg.fillColor = 0x262C3E;
 //			bg.alpha = 0.6;
-//			bg.percentHeight = bg.percentWidth = 100;
-//			addElement(bg);
-			var bg:UIAsset = new UIAsset();
-			bg.top = 0;
-			bg.skinName = new back_top;
+			bg.percentHeight = bg.percentWidth = 100;
 			addElement(bg);
 			
-//			var tg:Rect = new Rect();
-//			tg.fillColor = 0xffffff;
-//			tg.width = 170;
-//			tg.height = 25;
-//			tg.verticalCenter = 0;
-//			tg.left = 20;
-//			addElement(tg);
 			var sg:UIAsset = new UIAsset();
 			sg.left = 20;
 			sg.verticalCenter = 0;
 			sg.skinName = new searchBg;
-			addElement(sg);
+//			addElement(sg);
 			
 			searchTxt = new EditableText();
 			searchTxt.text = "无心法师";
@@ -104,7 +98,7 @@ package view
 			searchTxt.height = 18;
 			searchTxt.verticalCenter = 0;
 			searchTxt.left = 25;
-			addElement(searchTxt);
+//			addElement(searchTxt);
 			searchTxt.addEventListener(FocusEvent.FOCUS_IN, focusIn);
 			searchTxt.addEventListener(FocusEvent.FOCUS_OUT, focusOut);
 			
@@ -113,7 +107,7 @@ package view
 			searchBtn.verticalCenter = 0;
 			searchBtn.left = 165;
 			searchBtn.skinName = new serchBtn;
-			addElement(searchBtn);
+//			addElement(searchBtn);
 			searchBtn.addEventListener(MouseEvent.CLICK, clickSearch);
 			
 			shareBtn = new Button();

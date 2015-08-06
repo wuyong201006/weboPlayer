@@ -8,8 +8,12 @@ package net
 	import flash.net.NetStream;
 	import flash.utils.Timer;
 	import flash.utils.clearInterval;
+	import flash.utils.clearTimeout;
 	import flash.utils.setInterval;
+	import flash.utils.setTimeout;
 	
+	import events.GlobalServer;
+	import events.GlobalServerEvent;
 	import events.PlayerEvent;
 
 	public class DefinedPlayer extends EventDispatcher
@@ -19,24 +23,32 @@ package net
 		private var _druation:Number = 0;
 		private var _netStream:NetStream;
 		
+		private var _playStatus:Boolean=false;//播放状态
 		private var heartbeat:Timer = new Timer(100);
 		public function DefinedPlayer(url:String, druation:Number)
 		{
 			_url = url;
 //			_druation = druation;
-			
 			var netConnection:NetConnection = new NetConnection();
 			netConnection.connect(null);
 			_netStream = new NetStream(netConnection);
-			_netStream.client = {onMetaData:this.onMetaData, onCuePoint:this.onCuePoint};
+			_netStream.client = {onMetaData:this.onMetaData, onCuePoint:this.onCuePoint, onPlayStatus:this.onPlayStatus};
 			_netStream.addEventListener(NetStatusEvent.NET_STATUS, netStreamStatus);
 			
 			heartbeat.addEventListener(TimerEvent.TIMER, onHeartbear);
-			
-			_netStream.bufferTime
 		}
 		
 		
+		public function get playStatus():Boolean
+		{
+			return _playStatus;
+		}
+
+		public function set playStatus(value:Boolean):void
+		{
+			_playStatus = value;
+		}
+
 		public function get netStream():NetStream
 		{
 			return _netStream;
@@ -60,13 +72,29 @@ package net
 			return _mediaInfo;
 		}
 		
+		private var IsBufferFull:Boolean=false;
+		private var timeOut:Number;
 		public function play():void
 		{
+			playStatus = !playStatus;
+			
 			_netStream.play(_url);
+			
+			if(!IsBufferFull)
+			{
+				var dp:DefinedPlayer = this;
+				var ti:Number = 0;
+				
+				timeOut = setInterval(function():void{
+					ti += 0.1;
+					dp.dispatchEvent(new PlayerEvent(PlayerEvent.PLAYER_BUFFER_UPDATE, ti/*netStream.bufferLength*/))
+				}, 100);
+			}
 		}
 		
 		public function pause():void
 		{
+			playStatus = !playStatus;
 			_netStream.togglePause();
 		}
 		
@@ -112,12 +140,17 @@ package net
 				case "NetStream.Buffer.Empty":
 					break;
 				case "NetStream.Buffer.Full":
+					clearTimeout(timeOut);
+					IsBufferFull = true;
+					dispatchEvent( new PlayerEvent(PlayerEvent.PLAYER_BUFFER_FULL));
 					break;
 				case "NetStream.Play.Start":
 					heartbeat.start();
+//					GlobalServer.dispatchEvent(new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_START));
 					break;
 				case "NetStream.Play.Stop":
 					heartbeat.stop();
+					GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_STOP));
 					break;
 				case "NetStream.Seek.Failed":
 					clearInterval(seekID);
@@ -149,6 +182,11 @@ package net
 		
 		private function onCuePoint(info:Object) : void
 		{
+		}
+		
+		private function onPlayStatus(info:Object):void
+		{
+			trace(info);
 		}
 	}
 }

@@ -4,15 +4,27 @@ package view
 
 	public class WaterMark extends BasePanel
 	{
+		private var _minW:Number = 141;
+		private var _minH:Number = 34;
+		
 		private var mark:UIAsset;
 		public function WaterMark()
 		{
 			super();
 		}
 		
-		public function setWH(width:Number, height:Number):void
+		public function get minW():Number
 		{
-			
+			return _minW;
+		}
+		
+		public function setWH(scale:Number):void
+		{
+			if(mark != null)
+			{
+				mark.scaleX = scale;
+				mark.scaleY = scale;				
+			}
 		}
 		
 		override protected function createChildren():void
@@ -21,8 +33,8 @@ package view
 			mark.skinName = new watermark;
 			addElement(mark);
 			
-			this.width = mark.width;
-			this.height = mark.height;
+//			this.width = mark.width;
+//			this.height = mark.height;
 		}
 		
 		override public function open():void

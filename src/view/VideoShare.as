@@ -62,7 +62,8 @@ package view
 			var title:String = playerInfo.title;//简述标题
 			var summary:String = playerInfo.summary;
 			var rLink:String = playerInfo.linksUrl;//网站链接
-			var url:String = "http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?title="+encodeURIComponent(title)+'&url='+encodeURIComponent(rLink)+'&summary='+encodeURIComponent(summary);
+			var url:String = "http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?title="+encodeURIComponent(title)+'&url='+encodeURIComponent(rLink)+
+														'&summary='+encodeURIComponent(summary)+'&pics='+encodeURIComponent(pic);
 			NetManager.getInstance().sendURL(url);
 		}
 		
@@ -209,9 +210,12 @@ package view
 		{
 			super.open();
 			
-			NetManager.getInstance().loadImg(NetConstant.QRCODEURL, function(bit:Bitmap):void{
-				qrCode.skinName = bit;
-			});
+			NetManager.getInstance().loadImg(NetConstant.QRCODEURL, 
+				function(bit:Bitmap):void{
+				qrCode.skinName = bit;},
+				function():void{
+					GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "微信二维码无效数据"))}
+			);
 		}
 		
 		override public function close():void

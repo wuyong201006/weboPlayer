@@ -25,6 +25,8 @@ package net
 		
 		private var _playStatus:Boolean=false;//播放状态
 		private var heartbeat:Timer = new Timer(100);
+		
+		private var _IsPlayEnd:Boolean=false;//是否播放到最后 
 		public function DefinedPlayer(url:String, druation:Number)
 		{
 			_url = url;
@@ -38,6 +40,20 @@ package net
 			heartbeat.addEventListener(TimerEvent.TIMER, onHeartbear);
 		}
 		
+		public function get IsPlayEnd():Boolean
+		{
+			return _IsPlayEnd;
+		}
+
+		public function set IsPlayEnd(value:Boolean):void
+		{
+			_IsPlayEnd = value;
+		}
+
+		public function get druation():Number
+		{
+			return _druation;
+		}
 		
 		public function get playStatus():Boolean
 		{
@@ -171,6 +187,8 @@ package net
 		private function onHeartbear(event:TimerEvent):void
 		{
 			dispatchEvent( new PlayerEvent(PlayerEvent.PLAYER_UPDATE, {time:_netStream.time, bytesProgress:_netStream.bytesLoaded/_netStream.bytesTotal*100}));
+			
+			IsPlayEnd = _netStream.time == druation;
 		}
 		
 		private function onMetaData(info:Object) : void
@@ -186,7 +204,9 @@ package net
 		
 		private function onPlayStatus(info:Object):void
 		{
-			trace(info);
+			if(info.code == "NetStream.Play.Complete")
+			{
+			}
 		}
 	}
 }

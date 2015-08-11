@@ -10,9 +10,11 @@ package constant
 		public static const RECOMMENDURL:String = "http://s.newsapp.cibntv.net/tvmfusion/v4/feed-rel/feed?";
 		
 		//广告页
-		public static const ADVERTCHARTURL:String = "http://api.saas.tvm-beta.cn/spread/";
+		public static const ADVERTCHARTURL:String = "http://api.saas.tvm.cn/spread/";
 		
 		public static const VIDEOSHARE_HTMLURL:String = "http://web.newsapp.cibntv.net/app/play/?id=";
+		
+		public static const VIDEO_SEARCH:String = "http://s.newsapp.cibntv.net/tvmfusion/v4/fusion/v3-query?";
 		public function NetConstant()
 		{
 		}

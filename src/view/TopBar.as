@@ -5,12 +5,18 @@ package view
 	import flash.events.FocusEvent;
 	import flash.events.FullScreenEvent;
 	import flash.events.MouseEvent;
+	import flash.net.URLLoader;
 	
 	import component.skin.button.ShareBigButtonSkin;
 	
+	import constant.NetConstant;
+	
 	import events.GlobalServer;
 	import events.GlobalServerEvent;
+	import events.HttpEvent;
 	import events.PlayerEvent;
+	
+	import net.HttpRequest;
 	
 	import org.flexlite.domUI.components.Button;
 	import org.flexlite.domUI.components.EditableText;
@@ -23,6 +29,8 @@ package view
 		private var searchTxt:EditableText;
 		private var searchBtn:Button;
 		private var shareBtn:Button;
+		
+		private var _IsSearch:Boolean=false;
 		public function TopBar()
 		{
 			super();
@@ -30,6 +38,16 @@ package view
 //			this.addEventListener(Event.ADDED_TO_STAGE,addToStageHandler);
 		}
 		
+		public function get IsSearch():Boolean
+		{
+			return _IsSearch;
+		}
+
+		public function set IsSearch(value:Boolean):void
+		{
+			_IsSearch = value;
+		}
+
 		protected function addToStageHandler(event:Event):void
 		{
 			stage.addEventListener(FullScreenEvent.FULL_SCREEN,fullScreenChangeHandler);
@@ -60,16 +78,32 @@ package view
 		
 		private function clickSearch(event:MouseEvent):void
 		{
-			
+			var http:HttpRequest = new HttpRequest();
+			http.addEventListener(HttpEvent.HTTPDATA_SUCCESS, complete);
+			var data:Object = "q="+searchTxt.text+"&count=7&startPage=1&alt=json&fields=id,published,content,title,t:props,media:group,t:rtype,summary";
+			http.connect(NetConstant.VIDEO_SEARCH, data);
+		}
+		
+		private function complete(event:HttpEvent):void
+		{
+			var loader:URLLoader = new URLLoader();
+			if(loader.data == undefined || loader.data == "")
+			{
+				return;
+			}
+			var datas:Object = JSON.parse(loader.data);
+			trace(datas);
 		}
 		
 		private function focusIn(event:FocusEvent):void
 		{
+			IsSearch = true;
 			searchTxt.text = "";
 		}
 		
 		private function focusOut(event:FocusEvent):void
 		{
+			IsSearch = false;
 			if(searchTxt.text == "")
 			{
 				searchTxt.text = "无心法师";
@@ -84,7 +118,7 @@ package view
 			bg.fillColor = 0x262C3E;
 //			bg.alpha = 0.6;
 			bg.percentHeight = bg.percentWidth = 100;
-			addElement(bg);
+//			addElement(bg);
 			
 			var sg:UIAsset = new UIAsset();
 			sg.left = 20;

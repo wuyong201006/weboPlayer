@@ -4,15 +4,19 @@ package view
 	import com.greensock.easing.Linear;
 	
 	import flash.events.Event;
+	import flash.events.IOErrorEvent;
 	import flash.events.MouseEvent;
 	import flash.events.TimerEvent;
 	import flash.net.URLLoader;
 	import flash.utils.Timer;
+	import flash.utils.setTimeout;
 	
 	import component.skin.button.PlayerButtonSkin;
 	
 	import constant.NetConstant;
 	
+	import events.GlobalServer;
+	import events.GlobalServerEvent;
 	import events.HttpEvent;
 	
 	import net.HttpRequest;
@@ -52,14 +56,17 @@ package view
 		{
 			super();
 			
-			this.width = minWidth;
-			this.height = minHeight;
+			this.width = minW;
+			this.height = minH;
 			
 			addEventListener(Event.ADDED_TO_STAGE, addedToStage);
 		}
 		
 		private function addedToStage(event:Event):void
 		{
+			addEventListener(MouseEvent.ROLL_OVER, rollOver);
+			addEventListener(MouseEvent.ROLL_OUT, rollOut);
+			
 			createTimer();
 			
 //			var test:Vector.<VideoInfo> = new Vector.<VideoInfo>();
@@ -71,17 +78,47 @@ package view
 //			videoList = test;
 		}
 		
+		private function rollOver(event:MouseEvent):void
+		{
+			addEventListener(MouseEvent.MOUSE_MOVE, moveHandler);
+			
+		}
+		
+		private function rollOut(event:MouseEvent):void
+		{
+			removeEventListener(MouseEvent.MOUSE_MOVE, moveHandler);
+			
+			timer && timer.start();
+		}
+		
+		private function moveHandler(event:MouseEvent):void
+		{
+			timer && timer.stop();
+		}
+		
 		private function requestPlayerList():void
 		{
 			var http:HttpRequest = new HttpRequest();
+			http.addEventListener(HttpEvent.HTTPSERVICE_FAIL, fail);
 			http.addEventListener(HttpEvent.HTTPDATA_SUCCESS, complete);
-			var data:Object = "alt=json&count=4&i=tv&id="+566389+"&startPage=1&fields=id,published,content,title,t:props,media:group,t:rtype,summary";
+			var data:Object = "alt=json&count=7&i=tv&id="+Main.main.playerParams.id+"&startPage=1&fields=id,published,content,title,t:props,media:group,t:rtype,summary";
 			http.connect(NetConstant.RECOMMENDURL+data);
+		}
+		
+		private function fail(event:HttpEvent):void
+		{
+			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "推荐页加载错误"));
 		}
 		
 		private function complete(event:HttpEvent):void
 		{
 			var loader:URLLoader = event.data as URLLoader;
+			if(loader.data == "")
+			{
+				GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "推荐页无效数据"));
+				return;
+			}
+			
 			var data:Object = JSON.parse(loader.data);
 			var datas:Object = data.feed.entry;
 			
@@ -124,6 +161,8 @@ package view
 		
 		private function timerHandler(event:TimerEvent):void
 		{
+			if(maxValue <= 1)return;
+			
 			delayTime++;
 			
 			if(delayTime >= 4)
@@ -132,6 +171,7 @@ package view
 				curIndex++;
 				if(curIndex >= maxValue)
 					curIndex = 0;
+				
 				start();
 			}
 		}
@@ -235,8 +275,14 @@ package view
 		
 		private var minW:Number = 482;
 		private var minH:Number = 271;
+		
+		private var wid:Number;
+		private var hei:Number;
 		public function scaleWH(width:Number, height:Number):void
 		{
+			wid = width;
+			hei = height;
+			
 			if(stage == null)return;
 			
 			if(width < stage.fullScreenWidth)
@@ -313,7 +359,8 @@ package view
 			bg = new Rect();
 			bg.fillColor = 0x000000;
 			bg.width = /*percentWidth*/482*scale;
-			bg.height = 271*scale;
+			bg.height = /*271*/355*scale;
+			bg.top = -40;
 			bg.alpha = 0.6;
 			addElement(bg);
 			
@@ -361,6 +408,9 @@ package view
 		 {
 			 super.open();
 			 
+			 if(wid > 0 || hei > 0)
+				 scaleWH(wid, hei);
+			 
 			 requestPlayerList();
 		 }
 		 
@@ -380,6 +430,8 @@ import flash.display.Bitmap;
 import flash.events.Event;
 import flash.events.MouseEvent;
 import flash.net.URLLoader;
+import flash.net.URLRequest;
+import flash.net.navigateToURL;
 
 import component.RecommendSkinUnit;
 import component.skin.button.RecommendButtonSkin;
@@ -414,8 +466,8 @@ class RecommendUnit extends Group
 	{
 		super();
 		
-		this.width = minWidth*scale;
-		this.height = minHeight*scale;
+		this.width = minW*scale;
+		this.height = minH*scale;
 		
 		_videoInfo = videoInfo;
 		_IsVideo = IsVideo;
@@ -433,9 +485,19 @@ class RecommendUnit extends Group
 		return _IsVideo;
 	}
 	
+	/**收入收藏夹*/
+	public function favorites():void
+	{
+		var url:String = NetConstant.VIDEOSHARE_HTMLURL+Main.main.playerParams.id;
+		var name:String = Main.main.playerInfo.title;
+		
+		navigateToURL( new URLRequest("javascript:window.external.addFavorite('"+url+"', '"+name+"'')"), "_self");
+	}
+	
 	private function playVideo(event:MouseEvent):void
 	{
 		GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.RECOMMEND_PLAY, videoInfo.id));
+		GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_START));
 	}
 	
 	private function clickHandler(event:MouseEvent):void
@@ -447,6 +509,7 @@ class RecommendUnit extends Group
 				GlobalServer.dispatchEvent(new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_START));
 				break;
 			case store:
+//				favorites();
 				break;
 			case share:
 				GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.VIDEO_SHARE_ADD));
@@ -454,12 +517,12 @@ class RecommendUnit extends Group
 		}
 	}
 	
-//	private var minWidth:Number=190;
-//	private var minHeight:Number = 108;
+	private var minW:Number=190;
+	private var minH:Number = 108;
 	public function scaleWH():void
 	{
-		var perw:Number = this.width / minWidth;
-		var perh:Number = this.height / minHeight;
+		var perw:Number = this.width / minW;
+		var perh:Number = this.height / minH;
 		var scale:Number = perw < perh ? perw : perh;
 		
 		if(rePlay != null)
@@ -504,7 +567,7 @@ class RecommendUnit extends Group
 			video.addEventListener(MouseEvent.CLICK, playVideo);
 			
 			NetManager.getInstance().loadImg(videoInfo.thumburl, function(bit:Bitmap):void{
-				video.skinName = bit
+				video.skinName = bit;
 			});
 		}
 		else

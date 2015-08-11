@@ -31,7 +31,7 @@ package view
 		private function addToScene():void
 		{
 			_panel_open_status = true;
-			if(this is LoadingBar || this is Recommend)
+			if(this is LoadingBar || this is Recommend || this is WaterMark)
 			{
 				Main.main.frontContainer.addElement(this);
 			}

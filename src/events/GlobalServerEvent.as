@@ -15,6 +15,8 @@ package events
 		public static var RECOMMEND_PLAY:String="recommend_play";
 		
 		public static var PLAYER_PLAY_PAUSE:String = "player_play_pause";
+		
+		public static var WEBOPLAYER_LOG:String = "weboplayer_log";
 		public function GlobalServerEvent(type:String, data:Object=null, bubbles:Boolean=false, cancelable:Boolean=false)
 		{
 			super(type, bubbles, cancelable);

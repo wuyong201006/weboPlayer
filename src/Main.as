@@ -16,6 +16,8 @@ package
 	import flash.utils.clearTimeout;
 	import flash.utils.setTimeout;
 	
+	import constant.NetConstant;
+	
 	import events.GlobalServer;
 	import events.GlobalServerEvent;
 	import events.HttpEvent;
@@ -125,30 +127,40 @@ package
 		
 		private function addedToStage(event:Event):void
 		{
-			requestPlayer();
 			
 			stage.addEventListener(FullScreenEvent.FULL_SCREEN,fullScreenChangeHandler);
 			stage.addEventListener(Event.RESIZE, resizeHandler);
 			
 			addEventListener(MouseEvent.MOUSE_MOVE,userActiveHandler);
+			
+			GlobalServer.addEventListener(GlobalServerEvent.WEBOPLAYER_LOG, weboPlayerLog);
+			
+			requestPlayer();
 		}
 		
 		
 		public function requestPlayer():void
 		{
 			var http:HttpRequest = new HttpRequest();
+			http.addEventListener(HttpEvent.HTTPSERVICE_FAIL, fail);
 			http.addEventListener(HttpEvent.HTTPDATA_SUCCESS, complete);
 			http.connect(playerUrl+playerParams.id);
 		}
 		
-		private function ioError(event:Event):void
+		private function fail(event:HttpEvent):void
 		{
-			//			trace("请求视频源加载错误！！！");
+			log("请求视频源加载错误");
 		}
 		
 		private function complete(event:HttpEvent):void
 		{
 			var loader:URLLoader = event.data as URLLoader;
+			if(loader.data == "")
+			{
+				log("请求视频-无效数据");
+				return;
+			}
+			
 			var data:Object = JSON.parse(loader.data);
 			
 			playerInfo.title = data.display_name;
@@ -210,6 +222,23 @@ package
 //			{
 //				ExternalInterface.addCallback("seek", seekExternal);//秒
 //			}
+			
+			favorites();
+			
+			recommend.videoList
+		}
+		
+		/**收入收藏夹*/
+		public function favorites():void
+		{
+			var url:String = NetConstant.VIDEOSHARE_HTMLURL;
+			var name:String = Main.main.playerInfo.title;
+			if(ExternalInterface.available)
+			{
+				ExternalInterface.call("favourites", {url:url, name:name});
+			}
+//			
+//			navigateToURL( new URLRequest("javascript:window.external.AddFavorite('"+url+"', '"+name+"'')"), "_self");
 		}
 		
 		private function recommendPlay(event:GlobalServerEvent):void
@@ -256,7 +285,8 @@ package
 		
 		private function bufferUpdate(event:PlayerEvent):void
 		{
-			var buffTime:Number = Number(event.data)%2;
+			var data:Number = Number(event.data.toFixed(1));
+			var buffTime:Number = data%2 == 0 ? 2 : data%2;
 			loadingBar.updateProgress(buffTime, 2);
 		}
 		
@@ -338,7 +368,7 @@ package
 			}
 			else
 			{
-				if(!share.panel_open_status)
+				if(!share.panel_open_status && !definedPlayer.IsPlayEnd)
 					advertChart.open();
 			}
 			
@@ -382,6 +412,7 @@ package
 		//DeAcitvehandlerFun
 		protected function userActiveHandler(event:MouseEvent):void
 		{
+			
 			userActive = true;
 			
 			monitorDeactive();
@@ -397,6 +428,16 @@ package
 			
 			monitorId = setTimeout(function():void
 			{
+				if(loadingBar && loadingBar.panel_open_status)
+				{
+					return;
+				}
+				
+				if( topBar.IsSearch)
+				{
+					return;
+				}
+				
 				userActive = false;
 			},2000);
 		}
@@ -434,10 +475,30 @@ package
 			videoScreen.width = mediaInfo.width*scale;
 			videoScreen.height = mediaInfo.height*scale;
 			
-			waterMark.right = (w-videoScreen.width)/2/*+waterMark.width*/;
-			waterMark.top = (h-videoScreen.height)/2/*+waterMark.height*/;
+//			waterMark.right = (w-videoScreen.width)/2+30/*+waterMark.width*/;
+//			waterMark.top = (h-videoScreen.height)/2+20/*+waterMark.height*/;
+//			waterMark.right = 15*scale-;
+			waterMark.setWH(scale);
+			waterMark.right = 15*scale+scale*waterMark.minW;
+			
+			advertChart.setWH(scale);
 			
 			recommend.scaleWH(w, h);
+		}
+		
+		private function weboPlayerLog(event:GlobalServerEvent):void
+		{
+			log(event.data);
+		}
+		
+		private function log(...args):void
+		{
+			var logstr:String = JSON.stringify(args);
+			
+			if(ExternalInterface.available)
+			{
+				ExternalInterface.call('console.log', 'WEBOPLAYER--->',logstr);
+			}
 		}
 		
 		private var IsInit:Boolean=false;
@@ -465,7 +526,8 @@ package
 			
 			loadingBar = new LoadingBar();
 			loadingBar.horizontalCenter = 0;
-			loadingBar.top = 40;
+//			loadingBar.top = 40;
+			loadingBar.verticalCenter = 0;
 //			addElement(loadingBar);
 //			loadingBarStatus = false;
 			
@@ -498,8 +560,8 @@ package
 			waterMark = new WaterMark();
 			waterMark.right = 15;
 			waterMark.top = 15;
-			waterMark.open();
-			
+			videoScreen.addElement(waterMark);
+//			waterMark.open();
 			IsInit = true;
 		}
 	}

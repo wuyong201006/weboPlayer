@@ -96,7 +96,8 @@ package view
 		
 		override public function close():void
 		{
-			super.close();	
+			super.close();
+			destory();
 		}
 		
 		public function destory():void

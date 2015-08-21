@@ -74,12 +74,12 @@ package net
 			_errorCall = errorBack;
 			
 			var http:HttpRequest = new HttpRequest(URLRequestMethod.GET, URLLoaderDataFormat.BINARY);
-			http.addEventListener(HttpEvent.HTTPSERVICE_FAIL, fail);
+			http.addEventListener(HttpEvent.HTTPSERVICE_FAIL, serviceFail);
 			http.addEventListener(HttpEvent.HTTPDATA_SUCCESS, onSendComplete);
 			http.connect(url);
 		}
 		
-		private function fail(event:HttpEvent):void
+		private function serviceFail(event:HttpEvent):void
 		{
 			if(_errorCall != null)
 				_errorCall.call();

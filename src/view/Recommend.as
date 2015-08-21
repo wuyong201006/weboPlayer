@@ -4,12 +4,10 @@ package view
 	import com.greensock.easing.Linear;
 	
 	import flash.events.Event;
-	import flash.events.IOErrorEvent;
 	import flash.events.MouseEvent;
 	import flash.events.TimerEvent;
 	import flash.net.URLLoader;
 	import flash.utils.Timer;
-	import flash.utils.setTimeout;
 	
 	import component.skin.button.PlayerButtonSkin;
 	
@@ -93,6 +91,7 @@ package view
 		
 		private function moveHandler(event:MouseEvent):void
 		{
+			delayTime = 0;
 			timer && timer.stop();
 		}
 		
@@ -107,7 +106,7 @@ package view
 		
 		private function fail(event:HttpEvent):void
 		{
-			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "推荐页加载错误"));
+			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "推荐页加载错误:"+event.data));
 		}
 		
 		private function complete(event:HttpEvent):void
@@ -181,19 +180,22 @@ package view
 		{
 			delayTime = 0;
 			if(event.target == preBtn)
+			{
+				IsClick = true;
 				curIndex --;
+				if(curIndex < minValue)
+					curIndex = maxValue-1;
+			}
 			else
+			{
+				IsClick = false;				
 				curIndex++;
+				if(curIndex > maxValue-1)
+					curIndex = 0;
+			}
 				
-			if(curIndex <= minValue)
-				curIndex = minValue;
-			
-			if(curIndex > maxValue-1)
-				curIndex = maxValue-1;
-			
 			if(curIndex == lastIndex)return;
 			
-			IsClick = true;
 			start();
 		}
 		private function start():void
@@ -220,7 +222,7 @@ package view
 		{
 			var IsLeft:Boolean= false;
 			if(IsClick)
-				IsLeft = curIndex > lastIndex;
+				IsLeft = false;
 			else
 				IsLeft = true;
 			
@@ -229,7 +231,7 @@ package view
 			curRecommend = draw(list);	
 			curRecommend.x = IsLeft ? wid : -wid;
 			container.addElement(curRecommend);
-			
+			 
 //			TweenLite.delayedCall(2, function():void{
 			if(lastRecommend != null)
 			{
@@ -307,6 +309,12 @@ package view
 				bg.height = height/*271*scale*/;
 			}
 			
+			if(mask != null)
+			{
+				mask.width = 482*scale;
+				mask.height = height;
+			}
+			
 			if(container != null)
 			{
 				container.width = 390*scale;
@@ -325,6 +333,8 @@ package view
 				nextBtn.scaleX = scale;
 				nextBtn.scaleY = scale;
 				nextBtn.x = this.width-nextBtn.width-15*scale;
+				
+				GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "Recommend:"+"width"+this.width+"nextBtn"+nextBtn.width)); 
 			}
 			
 			var reWidth:Number = 190*scale;
@@ -352,6 +362,7 @@ package view
 		}
 		
 		private var bg:Rect;
+		private var mask:Rect;
 		override protected function createChildren():void
 		{
 			super.createChildren();
@@ -386,6 +397,17 @@ package view
 			nextBtn.skinName = new PlayerButtonSkin(nextPage_normal, nextPage_hover);
 			addElement(nextBtn);
 			nextBtn.addEventListener(MouseEvent.CLICK, clickHandler);
+			
+			mask = new Rect();
+			mask.fillColor = 0x000000;
+			mask.width = /*percentWidth*/482*scale;
+			mask.height = /*271*/355*scale;
+			mask.top = -40;
+			addElement(mask);
+			mask.mouseEnabled = false;
+			mask.mouseChildren = false;
+			
+			container.mask = mask;
 		}
 		
 		 protected function removeRecommend(group:Group):void
@@ -432,6 +454,7 @@ import flash.events.MouseEvent;
 import flash.net.URLLoader;
 import flash.net.URLRequest;
 import flash.net.navigateToURL;
+import flash.text.TextFormatAlign;
 
 import component.RecommendSkinUnit;
 import component.skin.button.RecommendButtonSkin;
@@ -447,6 +470,7 @@ import net.NetManager;
 
 import org.flexlite.domUI.components.Button;
 import org.flexlite.domUI.components.Group;
+import org.flexlite.domUI.components.Label;
 import org.flexlite.domUI.components.Rect;
 import org.flexlite.domUI.components.UIAsset;
 
@@ -543,8 +567,15 @@ class RecommendUnit extends Group
 			share.scaleX = scale;
 			share.scaleY = scale;
 		}
+		
+		if(label != null)
+		{
+			label.width = this.width;
+			label.bottom = 5*scale;
+		}
 	}
 	
+	private var label:Label;
 	private var IsInit:Boolean=false;
 	public function initUI(IsVideo:Boolean=true):void
 	{
@@ -569,6 +600,15 @@ class RecommendUnit extends Group
 			NetManager.getInstance().loadImg(videoInfo.thumburl, function(bit:Bitmap):void{
 				video.skinName = bit;
 			});
+			
+			label = new Label();
+			label.horizontalCenter = 0;
+			label.bottom = 5;
+			label.textColor = 0xffffff;
+			label.width = this.width;
+			label.textAlign = TextFormatAlign.CENTER;
+			addElement(label);
+			label.text = ""+videoInfo.title;
 		}
 		else
 		{

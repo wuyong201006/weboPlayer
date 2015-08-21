@@ -1,27 +1,18 @@
 package view
 {
-	import com.greensock.easing.Quad;
+	import com.hurlant.util.Base64;
 	
 	import flash.desktop.Clipboard;
 	import flash.desktop.ClipboardFormats;
 	import flash.display.Bitmap;
-	import flash.display.BitmapData;
-	import flash.display.Loader;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
-	import flash.net.URLLoader;
-	import flash.net.URLLoaderDataFormat;
-	import flash.net.URLRequestMethod;
-	import flash.utils.ByteArray;
 	
 	import constant.NetConstant;
 	
 	import events.GlobalServer;
 	import events.GlobalServerEvent;
-	import events.HttpEvent;
-	import events.PlayerEvent;
 	
-	import net.HttpRequest;
 	import net.NetManager;
 	
 	import org.flexlite.domUI.components.Button;
@@ -50,8 +41,8 @@ package view
 		private function clickClose(event:MouseEvent):void
 		{
 			close();
-			
-			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.VIDEO_SHARE_REMOVE));
+//			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_PAUSE));
+//			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.VIDEO_SHARE_REMOVE));
 		}
 		
 		private function clickQQZone(event:MouseEvent):void
@@ -67,9 +58,22 @@ package view
 			NetManager.getInstance().sendURL(url);
 		}
 		
+		private function clickWebo(event:MouseEvent):void
+		{
+			var playerInfo:Object = Main.main.playerInfo;
+			//分享webo
+			var pic:String = String(playerInfo.thumburl).replace(/\n/g, "");
+			var summary:String = playerInfo.summary;
+			var rLink:String = playerInfo.linksUrl;//网站链接
+			var url:String = "http://service.weibo.com/share/share.php?url=" + encodeURIComponent(rLink) + 
+				"&title="+ encodeURIComponent(summary) +"&pic=" + encodeURIComponent(pic);
+			
+			NetManager.getInstance().sendURL(url);
+		}
+		
 		private function clickHtml(event:MouseEvent):void
 		{
-			var htmlUrl:String = NetConstant.VIDEOSHARE_HTMLURL+Main.main.playerParams.id;
+			var htmlUrl:String = '<embed  src='+'"'+Main.main.playerParams.url+'"'+' type="application/x-shockwave-flash"'+' allowscriptaccess="always"'+' allowfullscreen="true"'+' wmode="opaque"'+' width="482"'+' height="355"'+'>';
 			copy.text = htmlUrl;
 			
 			Clipboard.generalClipboard.clear();
@@ -78,11 +82,11 @@ package view
 		
 		private function clickSwf(event:MouseEvent):void
 		{
-			var playerInfo:Object = Main.main.playerInfo;
-			copy.text = playerInfo.swfUrl;
+			var playerInfo:Object = Main.main.playerParams;
+			copy.text = playerInfo.url+"?"+"shareid="+playerInfo.id;
 			
 			Clipboard.generalClipboard.clear();
-			Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT, playerInfo.swfUrl);
+			Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT, copy.text);
 		}
 		
 		private function createLabel(text:String, color:uint,  size:Number, parent:Group, bold:Boolean=false):Label
@@ -132,7 +136,7 @@ package view
 			close.addEventListener(MouseEvent.CLICK, clickClose);
 			
 			var group:Group = new Group();
-			group.left = 60;
+			group.left = 40;
 			group.top = 28;
 			addElement(group);
 			
@@ -145,8 +149,15 @@ package view
 			group.addElement(qqzone);
 			qqzone.addEventListener(MouseEvent.CLICK, clickQQZone);
 			
+			var wbo:Button = new Button();
+			wbo.left = 100;
+			wbo.verticalCenter = 0;
+			wbo.skinName =  new webo;
+			group.addElement(wbo);
+			wbo.addEventListener(MouseEvent.CLICK, clickWebo);
+			
 			var gro:Group = new Group();
-			gro.left = 60;
+			gro.left = 40;
 			gro.top = 68;
 			addElement(gro);
 			
@@ -154,7 +165,7 @@ package view
 			
 			var rect:Rect = new Rect();
 			rect.fillColor = 0xffffff;
-			rect.width = 215;
+			rect.width = 225;
 			rect.height = 26;
 //			rect.alpha = 0.6;
 			rect.left = 60;
@@ -164,7 +175,7 @@ package view
 			copy = new EditableText();
 			copy.left = 62;
 			copy.top = -1;
-			copy.width = 212;
+			copy.width = 222;
 			copy.text = "点击下方按钮复制对应分享链接地址";
 			copy.textColor = 0xcccccc;
 			copy.size = 13;
@@ -186,7 +197,7 @@ package view
 			swf.addEventListener(MouseEvent.CLICK, clickSwf);
 			
 			var g:Group = new Group();
-			g.left = 60;
+			g.left = 40;
 			g.top = 128;
 			addElement(g);
 			
@@ -200,17 +211,26 @@ package view
 			qrCode.top = -5;
 			g.addElement(qrCode);
 			
-			var qrTxt:Label = createLabel("扫描左侧二维码用手机继续观看", 0xcccccc, 14, g, true);
+			var qrTxt:Label = createLabel("用微信或其他手机软件扫描即可在手机上观看或者分享", 0xcccccc, 14, g, true);
+			qrTxt.leading = 3;
+			qrTxt.letterSpacing = 1;
 			qrTxt.width = 110;
-			qrTxt.left = 160;
+			qrTxt.left = 165;
 			qrTxt.verticalCenter = 0;
 		}
 		
 		override public function open():void
 		{
+			if(this.panel_open_status)
+				return;
+			
 			super.open();
 			
-			NetManager.getInstance().loadImg(NetConstant.QRCODEURL, 
+			var url:String = "aHR0cDovL3dlYi5uZXdzYXBwLmNpYm50di5uZXQvYXBwL3BsYXkvP2lkPTU3NDIzNw";
+			url = Base64.encode(Main.main.playerInfo.linksUrl);
+			
+			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, ""+Main.main.playerParams.id));
+			NetManager.getInstance().loadImg(NetConstant.QRCODEURL+url, 
 				function(bit:Bitmap):void{
 				qrCode.skinName = bit;},
 				function():void{

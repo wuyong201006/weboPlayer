@@ -73,7 +73,7 @@ package view
 		private function clickShare(event:MouseEvent):void
 		{
 			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.VIDEO_SHARE_ADD));
-			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_PAUSE));
+//			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_PAUSE));
 		}
 		
 		private function clickSearch(event:MouseEvent):void
@@ -118,7 +118,7 @@ package view
 			bg.fillColor = 0x262C3E;
 //			bg.alpha = 0.6;
 			bg.percentHeight = bg.percentWidth = 100;
-//			addElement(bg);
+			addElement(bg);
 			
 			var sg:UIAsset = new UIAsset();
 			sg.left = 20;

@@ -15,9 +15,10 @@ package net
 	import events.GlobalServer;
 	import events.GlobalServerEvent;
 	import events.PlayerEvent;
-
+	
 	public class DefinedPlayer extends EventDispatcher
 	{
+		public const BUFFERMIN:Number = 3;//缓存最少时间
 		private var _url:String="";
 		private var _mediaInfo:Object;
 		private var _druation:Number = 0;
@@ -40,6 +41,16 @@ package net
 			heartbeat.addEventListener(TimerEvent.TIMER, onHeartbear);
 		}
 		
+		public function get IsBufferFull():Boolean
+		{
+			return _IsBufferFull;
+		}
+
+		public function set IsBufferFull(value:Boolean):void
+		{
+			_IsBufferFull = value;
+		}
+
 		public function get IsPlayEnd():Boolean
 		{
 			return _IsPlayEnd;
@@ -88,8 +99,9 @@ package net
 			return _mediaInfo;
 		}
 		
-		private var IsBufferFull:Boolean=false;
+		private var _IsBufferFull:Boolean=false;
 		private var timeOut:Number;
+		private var curTi:Number = 0;
 		public function play():void
 		{
 			playStatus = !playStatus;
@@ -99,11 +111,14 @@ package net
 			if(!IsBufferFull)
 			{
 				var dp:DefinedPlayer = this;
-				var ti:Number = 0;
 				
 				timeOut = setInterval(function():void{
-					ti += 0.1;
-					dp.dispatchEvent(new PlayerEvent(PlayerEvent.PLAYER_BUFFER_UPDATE, ti/*netStream.bufferLength*/))
+					curTi += 0.1;
+					if(IsBufferFull && curTi > BUFFERMIN)
+					{
+						defineBufferFull();
+					}
+					dp.dispatchEvent(new PlayerEvent(PlayerEvent.PLAYER_BUFFER_UPDATE, curTi/*netStream.bufferLength*/))
 				}, 100);
 			}
 		}
@@ -145,6 +160,15 @@ package net
 			netStream.soundTransform = soundTransform;
 		}
 		
+		private function defineBufferFull():void
+		{
+			if(!playStatus)
+				pause();
+			
+			clearTimeout(timeOut);
+			dispatchEvent( new PlayerEvent(PlayerEvent.PLAYER_BUFFER_FULL));
+		}
+		
 		private function netStreamStatus(event:NetStatusEvent):void
 		{
 			switch(event.info.code)
@@ -156,15 +180,22 @@ package net
 				case "NetStream.Buffer.Empty":
 					break;
 				case "NetStream.Buffer.Full":
-					clearTimeout(timeOut);
 					IsBufferFull = true;
-					dispatchEvent( new PlayerEvent(PlayerEvent.PLAYER_BUFFER_FULL));
+					if(curTi < BUFFERMIN)
+					{
+						if(playStatus)
+							pause();						
+						return;
+					}
+					
+					defineBufferFull();
 					break;
 				case "NetStream.Play.Start":
 					heartbeat.start();
 //					GlobalServer.dispatchEvent(new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_START));
 					break;
 				case "NetStream.Play.Stop":
+					IsPlayEnd = true;
 					heartbeat.stop();
 					GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_STOP));
 					break;
@@ -187,6 +218,7 @@ package net
 		private function onHeartbear(event:TimerEvent):void
 		{
 			dispatchEvent( new PlayerEvent(PlayerEvent.PLAYER_UPDATE, {time:_netStream.time, bytesProgress:_netStream.bytesLoaded/_netStream.bytesTotal*100}));
+			
 			
 			IsPlayEnd = _netStream.time == druation;
 		}

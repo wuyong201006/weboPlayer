@@ -15,6 +15,7 @@ package view
 	import net.HttpRequest;
 	import net.NetManager;
 	
+	import org.flexlite.domUI.components.Button;
 	import org.flexlite.domUI.components.UIAsset;
 	
 	/**
@@ -25,11 +26,24 @@ package view
 		private var img:UIAsset;
 		
 		private var _data:Object;//{image:url, link:url}
+		private var _IsAdvert:Boolean=false;
 		public function AdvertChart()
 		{
 			super();
 		}
 		
+		public function get IsAdvert():Boolean
+		{
+			return _IsAdvert;
+		}
+
+		public function set IsAdvert(value:Boolean):void
+		{
+			_IsAdvert = value;
+			
+			closeBtn.visible = value;
+		}
+
 		public function get data():Object
 		{
 			return _data;
@@ -42,8 +56,15 @@ package view
 
 		private function clickHandler(event:MouseEvent):void
 		{
-			if(data != null)
-				NetManager.getInstance().sendURL(data.link);
+			if(IsAdvert)
+			{
+				if(data != null)
+					NetManager.getInstance().sendURL(data.link);
+			}
+			else
+			{
+				GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_PAUSE));
+			}
 		}
 		
 		private var _scale:Number;
@@ -55,7 +76,20 @@ package view
 			{
 				img.scaleX = scale;
 				img.scaleY = scale;
+				
+				if(IsAdvert)
+				{
+					graphics.clear();
+					graphics.lineStyle(1, 0xffffff);
+					graphics.drawRect(-1, -1, img.width+2, img.height+2);
+				}
 			}
+			
+//			if(closeBtn != null)
+//			{
+//				closeBtn.scaleX = scale;
+//				closeBtn.scaleY = scale;
+//			}
 		}
 		
 		override protected function createChildren():void
@@ -69,35 +103,61 @@ package view
 			img = new UIAsset();
 			img.horizontalCenter = 0;
 			img.verticalCenter = 0;
-			img.skinName = new pop();
+//			img.skinName = new pop();
 			addElement(img);
 			img.addEventListener(MouseEvent.CLICK, clickHandler);
 			img.buttonMode = true;
 			
+			closeBtn = new UIAsset();
+			closeBtn.right = 5;
+			closeBtn.top = 5;
+			closeBtn.skinName = new adverchat_close;
+			addElement(closeBtn);
+			closeBtn.addEventListener(MouseEvent.CLICK, function(event:MouseEvent):void{close()});
+			closeBtn.buttonMode = true;
+			closeBtn.visible = false;
+				
 			var http:HttpRequest = new HttpRequest();
+			http.addEventListener(HttpEvent.HTTPSERVICE_FAIL, function(event:HttpEvent):void{
+				IsAdvert = false;
+				img.skinName = new play_center;
+			});
 			http.addEventListener(HttpEvent.HTTPDATA_SUCCESS, function(event:HttpEvent):void{
-				try
+				var loader:URLLoader = event.data as URLLoader;
+				if(loader.data == undefined || loader.data == "")
 				{
-					var loader:URLLoader = event.data as URLLoader;
-					var object:Object = JSON.parse(String(loader.data));
-					data = {image:object.spread.image, link:object.spread.link};
-					NetManager.getInstance().loadImg(data.image,
-						function(bit:Bitmap):void{
-						img.skinName = bit;},
-						function():void{
-							GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "推荐广告无效数据"))}
-					);
+					IsAdvert = false;
+					GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "推荐广告无效数据"));
+					img.skinName = new play_center;
+					return;					
 				}
-				catch(e:ErrorEvent)
+				var object:Object = JSON.parse(String(loader.data));
+				if(object.code != null && object.code  == 1)
 				{
-					
+					IsAdvert = false;
+					img.skinName = new play_center;
+					return;
 				}
+				data = {image:object.spread.image, link:object.spread.link};
+				NetManager.getInstance().loadImg(data.image,
+					function(bit:Bitmap):void{
+					IsAdvert = true;
+					img.skinName = bit;
+					},
+					function():void{
+						IsAdvert = false;
+						GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "推荐广告无效数据"))
+						img.skinName = new play_center;
+					}
+				);
 			});
 			http.connect(NetConstant.ADVERTCHARTURL);
 			
 			if(_scale > 0)
 				setWH(_scale);
 		}
+		
+		private var closeBtn:UIAsset;
 		
 		override public function open():void
 		{

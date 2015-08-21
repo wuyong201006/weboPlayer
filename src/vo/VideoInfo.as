@@ -14,7 +14,7 @@ package vo
 			
 			_id = String(data.id.$t).split(":")[2];
 			_content = data.content;
-			_title = data.title;
+			_title = data.title.$t;
 			_thumburl = data.media$group.media$thumbnail.url;
 		}
 		

@@ -18,6 +18,8 @@ package view
 	
 	import date.DateString;
 	
+	import events.GlobalServer;
+	import events.GlobalServerEvent;
 	import events.PlayerEvent;
 	
 	import net.NetManager;
@@ -113,7 +115,8 @@ package view
 		{
 			dispatchEvent( new PlayerEvent(PlayerEvent.CONTROLLBAR_UPDATE, progressBar.value));
 			var value:Number = progressBar.value;
-			curProLabel.text = int(value/3600)+":"+DateString.dateToString(value%3600);
+			var maxValue:Number = progressBar.maximum;
+			curProLabel.text = DateString.dateToString(value%3600)+"/"+DateString.dateToString(maxValue%3600);
 		}
 		
 		protected function fullScreenChangeHandler(event:FullScreenEvent):void
@@ -146,6 +149,7 @@ package view
 		
 		private function zoomInOutSwitch(event:MouseEvent):void
 		{
+			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "displayState:"+stage.displayState));
 			if(stage.displayState == StageDisplayState.FULL_SCREEN)
 			{
 				stage.displayState = StageDisplayState.NORMAL;
@@ -400,6 +404,7 @@ package view
 			g.addElement(glogo);
 			
 			var gTxt:Label = new Label();
+			gTxt.width = 65;
 			gTxt.left = 28;
 			gTxt.verticalCenter = 0;
 			gTxt.text = "环球视讯";

@@ -2,17 +2,14 @@ package
 {
 	import com.alex.flexlite.components.VideoUI;
 	import com.greensock.TweenLite;
-	import com.hurlant.util.Base64;
 	
-	import flash.display.Bitmap;
+	import flash.display.StageDisplayState;
 	import flash.events.Event;
 	import flash.events.FullScreenEvent;
-	import flash.events.IOErrorEvent;
 	import flash.events.MouseEvent;
 	import flash.external.ExternalInterface;
 	import flash.net.URLLoader;
-	import flash.net.URLRequest;
-	import flash.net.navigateToURL;
+	import flash.system.Security;
 	import flash.utils.clearTimeout;
 	import flash.utils.setTimeout;
 	
@@ -28,6 +25,7 @@ package
 	
 	import org.flexlite.domCore.Injector;
 	import org.flexlite.domUI.components.Group;
+	import org.flexlite.domUI.components.Label;
 	import org.flexlite.domUI.core.Theme;
 	import org.flexlite.domUI.managers.SystemManager;
 	import org.flexlite.domUI.skins.themes.VectorTheme;
@@ -60,8 +58,10 @@ package
 		
 		private var definedPlayer:DefinedPlayer;
 		private var playerUrl:String = "http://www.tvm.cn/weibo/get_data?url=www.tvm.cn/ishare/play/play.html?id=";
+		
 		private var _playerParams:Object={
-			id:null//(mp4url)
+			id:null,//(url id)
+			url:null//swf地址
 		}
 		
 		private var _playerInfo:Object={
@@ -69,9 +69,12 @@ package
 			thumburl:null,//缩略图
 			title:null,//标题
 			summary:null,//总结
-			swfUrl:null,//嵌入swf
 			linksUrl:null//来源链接
 		}
+		
+		private var playerCurIndex:int=0;
+		private var playerInfoList:Vector.<Object>;
+		private var IsDigitalID:Boolean=false;
 		private var IsPlayer:Boolean=true;//是否第一次播放
 		public function Main()
 		{
@@ -80,13 +83,20 @@ package
 			Injector.mapClass(Theme,VectorTheme);
 			//收藏页
 			//navigateToURL( (new URLRequest("javascript:window.external.addFavorite('http://qq.com', '收藏名字')")), "_self");
-			addEventListener(Event.ADDED_TO_STAGE, addedToStage);
 			
-			playerParams.id = this.loaderInfo.parameters.url;
+			playerParams.url = this.loaderInfo.url.split("?")[0];
+			playerParams.id = this.loaderInfo.parameters.shareid;
 			
-			playerParams.id = 566389;
+//			playerParams.id = 566389;
+//			playerParams.id = "18d24f91-c252-9644-32b8-902bcf309103";
 			
 			_main = this;
+			
+			Security.allowDomain('*');
+			
+			playerInfoList = new Vector.<Object>();
+			
+			addEventListener(Event.ADDED_TO_STAGE, addedToStage);
 		}
 		
 		private static var _main:Main
@@ -127,7 +137,6 @@ package
 		
 		private function addedToStage(event:Event):void
 		{
-			
 			stage.addEventListener(FullScreenEvent.FULL_SCREEN,fullScreenChangeHandler);
 			stage.addEventListener(Event.RESIZE, resizeHandler);
 			
@@ -144,12 +153,18 @@ package
 			var http:HttpRequest = new HttpRequest();
 			http.addEventListener(HttpEvent.HTTPSERVICE_FAIL, fail);
 			http.addEventListener(HttpEvent.HTTPDATA_SUCCESS, complete);
-			http.connect(playerUrl+playerParams.id);
+			
+			IsDigitalID = !isNaN(playerParams.id);
+			
+			if(!IsDigitalID)
+				http.connect(NetConstant.PLAYER_REQUEST_TYPE_STRING_URL+playerParams.id);
+			else
+				http.connect(NetConstant.PLAYER_REQUEST_TYPE_DIGITAL_URL+playerParams.id);
 		}
 		
 		private function fail(event:HttpEvent):void
 		{
-			log("请求视频源加载错误");
+			log("请求视频源加载错误"+event.data);
 		}
 		
 		private function complete(event:HttpEvent):void
@@ -162,19 +177,73 @@ package
 			}
 			
 			var data:Object = JSON.parse(loader.data);
+			if(data.status == "failed")
+				return;
+			if(IsDigitalID)
+			{
+				var entrys:Array = data.entry;
+				for(var i:int=0;i<entrys.length;i++)
+				{
+					var da:Object = entrys[i];
+					var pInfo:Object = new Object();
+					pInfo.title = da.title;
+					pInfo.url = da.media.content.url;
+					pInfo.summary = da.summary;
+					pInfo.thumburl = da.media.thumbnail.url;
+					pInfo.linksUrl = NetConstant.PLAYER_LINK_URL+"id="+playerParams.id;
+					playerInfoList.push(pInfo);
+				}
+				
+				continueToPlay();
+			}
+			else
+			{
+				var entry:Object = data.feed.entry;
+				if(entry != null)
+				{
+					playerInfo.title = entry.title.$t;
+					playerInfo.url  = entry.media$group.media$content[0].url;
+					playerInfo.summary = entry.summary.$t;
+					playerInfo.thumburl = entry.media$group.media$thumbnail.url;
+					playerInfo.linksUrl = NetConstant.PLAYER_LINK_URL+"id="+playerParams.id;
+					
+					initPlayer();
+				}
+			}
+//			playerInfo.title = data.display_name;
+//			playerInfo.url = data.stream.url;
+//			playerInfo.summary = data.summary;
+//			var u:String	= data.image.url;
+////			playerInfo.thumburl = u.replace(/\s/g, "").split("\x00-\x20").join("");
+////			playerInfo.thumburl = "";
+//			playerInfo.thumburl = u;
 			
-			playerInfo.title = data.display_name;
-			playerInfo.url = data.stream.url;
-			playerInfo.summary = data.summary;
-			var u:String	= data.image.url;
-//			playerInfo.thumburl = u.replace(/\s/g, "").split("\x00-\x20").join("");
-//			playerInfo.thumburl = "";
-			playerInfo.thumburl = u;
+//			var swf:String = data.embed_code;
+//			if(swf.indexOf(NetConstant.PLAYER_DOMAIN_OLD) > 0)
+//			{
+//				swf = swf.replace(NetConstant.PLAYER_DOMAIN_OLD, NetConstant.PLAYER_DOMAIN_LAST);
+//			}
+//			playerInfo.swfUrl =swf;
 			
-			playerInfo.swfUrl =data.embed_code;
-			playerInfo.linksUrl = data.links.url;
+//			var link:Array = String(data.links.url).split("?");
+//			playerInfo.linksUrl = NetConstant.PLAYER_LINK_URL+(link.length > 1 ? link[1]:"");
 			
 //			if(definedPlayer == null)
+			
+		}
+		
+		private function continueToPlay():void
+		{
+			if(playerCurIndex >= playerInfoList.length)
+				return;
+				
+			var data:Object = playerInfoList[playerCurIndex];
+			playerInfo.title = data.title;
+			playerInfo.url  = data.url;
+			playerInfo.summary = data.summary;
+			playerInfo.thumburl = data.thumburl;
+			playerInfo.linksUrl = data.linksUrl;
+			
 			initPlayer();
 		}
 		
@@ -209,7 +278,7 @@ package
 			
 			GlobalServer.addEventListener(GlobalServerEvent.PLAYER_PLAY_PAUSE, playerPlayPause);
 			
-			definedPlayer.bufferTime = 30;
+			definedPlayer.bufferTime = 90;
 			definedPlayer.play();
 			
 			loadingBar.open();
@@ -223,9 +292,7 @@ package
 //				ExternalInterface.addCallback("seek", seekExternal);//秒
 //			}
 			
-			favorites();
-			
-			recommend.videoList
+//			favorites();
 		}
 		
 		/**收入收藏夹*/
@@ -298,6 +365,9 @@ package
 		private function controllBarUpdate(event:PlayerEvent):void
 		{
 //			definedPlayer.seek(Number(event.data));
+			if(recommend.panel_open_status)
+				recommend.close();
+			
 			playerSeek(Number(event.data));
 		}
 		
@@ -313,6 +383,14 @@ package
 		
 		private function controllBarPlay(event:PlayerEvent):void
 		{
+			if(definedPlayer.IsPlayEnd)
+			{
+				if(recommend.panel_open_status)
+					recommend.close();
+				
+				playerSeek(0);
+				return;
+			}
 			playerPause();
 		}
 		
@@ -326,21 +404,31 @@ package
 			playerPause();
 		}
 		
-		private function playerPlayStart(event:GlobalServerEvent):void
+		private function playerPlayStart(event:GlobalServerEvent=null):void
 		{
-			recommend.close();
+			if(recommend.panel_open_status)
+				recommend.close();
+			if(advertChart.panel_open_status)
+				advertChart.close();
+			if(share.panel_open_status)
+				share.close();
 			
 			fullScreenChangeHandler(null);
 		}
 		
 		private function playerPlayStop(event:GlobalServerEvent):void
 		{
-			recommend.open();
+			if(!recommend.panel_open_status)
+				recommend.open();
+			
+			controllBar.playStatus = false;
 		}
 		
 		private function shareAdd(event:GlobalServerEvent):void
 		{
 			share.open();
+			if(definedPlayer.playStatus)
+				playerPause();
 		}
 		
 		private function shareRemove(event:GlobalServerEvent):void
@@ -457,16 +545,15 @@ package
 			
 			var w:Number = stage.stageWidth;
 			var h:Number = stage.stageHeight
-			if(w < stage.fullScreenWidth)
-				w = minW;
-			if(h <stage.fullScreenHeight)
-				h = minH;
-			
-			frontContainer.width = w;
-			frontContainer.height = h;
-			
-			behindContainer.width = w;
-			behindContainer.height = h;
+//			if(w < stage.fullScreenWidth)
+//				w = minW;
+//			if(h <stage.fullScreenHeight)
+//				h = minH;
+//			
+//			if(h == minH)
+//				w = minW;
+//			if(w == minW)
+//				h = minH;
 			
 			var perw:Number = w / mediaInfo.width;
 			var perh:Number = h / mediaInfo.height;
@@ -474,7 +561,19 @@ package
 			
 			videoScreen.width = mediaInfo.width*scale;
 			videoScreen.height = mediaInfo.height*scale;
+			log("videoScreenWidth"+videoScreen.width+"videoScreenHeight"+videoScreen.height);
+			if(info != null)
+			{
+				info.width = w;
+				info.text = "videoScreenWidth:"+videoScreen.width+"videoScreenHeight:"+videoScreen.height+
+					"mediaInfo.width:"+mediaInfo.width+"mediaInfo.height:"+mediaInfo.height+
+					"w:"+w+"h:"+h+"perw"+perw+"perh"+perh;
+			}
+			frontContainer.width = mediaInfo.width*scale;
+			frontContainer.height = mediaInfo.height*scale;
 			
+			behindContainer.width = mediaInfo.width*scale;
+			behindContainer.height = mediaInfo.height*scale;
 //			waterMark.right = (w-videoScreen.width)/2+30/*+waterMark.width*/;
 //			waterMark.top = (h-videoScreen.height)/2+20/*+waterMark.height*/;
 //			waterMark.right = 15*scale-;
@@ -483,7 +582,10 @@ package
 			
 			advertChart.setWH(scale);
 			
-			recommend.scaleWH(w, h);
+			if(stage.displayState == StageDisplayState.FULL_SCREEN)
+				recommend.scaleWH(w, h);
+			else
+				recommend.scaleWH(mediaInfo.width, mediaInfo.height);
 		}
 		
 		private function weboPlayerLog(event:GlobalServerEvent):void
@@ -495,12 +597,16 @@ package
 		{
 			var logstr:String = JSON.stringify(args);
 			
+			if(info != null)
+				info.text = info.text +"weboPlayer"+logstr;
+			
 			if(ExternalInterface.available)
 			{
 				ExternalInterface.call('console.log', 'WEBOPLAYER--->',logstr);
 			}
 		}
 		
+		private var info:Label;
 		private var IsInit:Boolean=false;
 		override protected function createChildren():void
 		{
@@ -514,8 +620,8 @@ package
 			videoScreen.buttonMode = true;
 			videoScreen.addEventListener(MouseEvent.CLICK, clickPlayPause);
 			
-//			frontContainer.horizontalCenter = 0;
-//			frontContainer.verticalCenter = 0;
+			frontContainer.horizontalCenter = 0;
+			frontContainer.verticalCenter = 0;
 			addElement(frontContainer);
 			
 			topBar = new TopBar();
@@ -532,8 +638,10 @@ package
 //			loadingBarStatus = false;
 			
 			recommend = new Recommend();
-			recommend.x = 0;
-			recommend.y = 40;
+//			recommend.x = 0;
+//			recommend.y = 40;
+			recommend.horizontalCenter = 0;
+			recommend.verticalCenter = 0;
 //			recommend.open();
 			
 			controllBar = new ControllBar();
@@ -542,8 +650,8 @@ package
 			controllBar.bottom = 0;
 			addElement(controllBar);
 			
-//			behindContainer.horizontalCenter = 0;
-//			behindContainer.verticalCenter = 0;
+			behindContainer.horizontalCenter = 0;
+			behindContainer.verticalCenter = 0;
 			addElement(behindContainer);
 			
 			advertChart = new AdvertChart();
@@ -557,11 +665,18 @@ package
 			share.verticalCenter = 0;
 //			addElement(share);
 //			videoShare = false;
+			
 			waterMark = new WaterMark();
 			waterMark.right = 15;
 			waterMark.top = 15;
 			videoScreen.addElement(waterMark);
 //			waterMark.open();
+			
+			info = new Label();
+//			addElement(info);
+			info.text = "宽度信息";
+			info.textColor = 0xffffff;
+			
 			IsInit = true;
 		}
 	}

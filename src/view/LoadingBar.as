@@ -2,11 +2,13 @@ package view
 {
 	import com.greensock.TweenLite;
 	import com.greensock.easing.Linear;
+	import com.hurlant.crypto.symmetric.NullPad;
 	
 	import component.skin.progressBar.LoadProgressBarSkin;
 	
 	import org.flexlite.domUI.components.Group;
 	import org.flexlite.domUI.components.ProgressBar;
+	import org.flexlite.domUI.components.Rect;
 	import org.flexlite.domUI.components.UIAsset;
 	
 	/**
@@ -46,14 +48,30 @@ package view
 		
 		private function stopTurn():void
 		{
+			IsTurn = false;
 			tweenLite && tweenLite.kill();
 		}
 		
+		public function setWH(width:Number, height:Number):void
+		{
+			this.width = width;
+			this.height = height;
+		}
+		
+		private var bg:Rect;
 		override protected function createChildren():void
 		{
 			super.createChildren();
 			
+			bg = new Rect();
+			bg.fillColor = 0xeeeeee;
+			bg.percentWidth = 100;
+			bg.percentHeight = 100;
+			addElement(bg);
+			
 			var back:UIAsset = new UIAsset();
+			back.horizontalCenter = 0;
+			back.verticalCenter = 0;
 			back.skinName = new loadBack;
 			addElement(back);
 			

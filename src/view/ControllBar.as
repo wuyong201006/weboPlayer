@@ -149,7 +149,6 @@ package view
 		
 		private function zoomInOutSwitch(event:MouseEvent):void
 		{
-			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "displayState:"+stage.displayState));
 			if(stage.displayState == StageDisplayState.FULL_SCREEN)
 			{
 				stage.displayState = StageDisplayState.NORMAL;

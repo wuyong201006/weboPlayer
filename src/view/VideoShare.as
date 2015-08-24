@@ -229,7 +229,6 @@ package view
 			var url:String = "aHR0cDovL3dlYi5uZXdzYXBwLmNpYm50di5uZXQvYXBwL3BsYXkvP2lkPTU3NDIzNw";
 			url = Base64.encode(Main.main.playerInfo.linksUrl);
 			
-			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, ""+Main.main.playerParams.id));
 			NetManager.getInstance().loadImg(NetConstant.QRCODEURL+url, 
 				function(bit:Bitmap):void{
 				qrCode.skinName = bit;},

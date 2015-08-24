@@ -164,7 +164,7 @@ package
 		
 		private function fail(event:HttpEvent):void
 		{
-			log("请求视频源加载错误"+event.data);
+//			log("请求视频源加载错误"+event.data);
 		}
 		
 		private function complete(event:HttpEvent):void
@@ -172,7 +172,7 @@ package
 			var loader:URLLoader = event.data as URLLoader;
 			if(loader.data == "")
 			{
-				log("请求视频-无效数据");
+//				log("请求视频-无效数据");
 				return;
 			}
 			
@@ -320,11 +320,6 @@ package
 		{
 			var object:Object = event.data;
 			rateCount++;
-			//call2js
-			if(ExternalInterface.available)
-			{
-				ExternalInterface.call('updateTime', Number(object.time)*1000);
-			}
 			
 			//			playLabel.text = "当前播放时间"+(Number(event.data));
 			
@@ -516,7 +511,7 @@ package
 			
 			monitorId = setTimeout(function():void
 			{
-				if(loadingBar && loadingBar.panel_open_status)
+				if(loadingBar && loadingBar.panel_open_status || stage && stage.displayState == StageDisplayState.NORMAL)
 				{
 					return;
 				}
@@ -544,7 +539,7 @@ package
 			if(mediaInfo == null || mediaInfo.height <= 0 || mediaInfo.width <= 0)return;
 			
 			var w:Number = stage.stageWidth;
-			var h:Number = stage.stageHeight
+			var h:Number = stage.stageHeight;
 //			if(w < stage.fullScreenWidth)
 //				w = minW;
 //			if(h <stage.fullScreenHeight)
@@ -556,19 +551,12 @@ package
 //				h = minH;
 			
 			var perw:Number = w / mediaInfo.width;
-			var perh:Number = h / mediaInfo.height;
+			var perh:Number = (stage && stage.displayState == StageDisplayState.FULL_SCREEN ? h : (h-80)) / mediaInfo.height;
 			var scale:Number = perw < perh ? perw : perh;
 			
 			videoScreen.width = mediaInfo.width*scale;
 			videoScreen.height = mediaInfo.height*scale;
-			log("videoScreenWidth"+videoScreen.width+"videoScreenHeight"+videoScreen.height);
-			if(info != null)
-			{
-				info.width = w;
-				info.text = "videoScreenWidth:"+videoScreen.width+"videoScreenHeight:"+videoScreen.height+
-					"mediaInfo.width:"+mediaInfo.width+"mediaInfo.height:"+mediaInfo.height+
-					"w:"+w+"h:"+h+"perw"+perw+"perh"+perh;
-			}
+//			log("videoScreenWidth"+videoScreen.width+"videoScreenHeight"+videoScreen.height);
 			frontContainer.width = mediaInfo.width*scale;
 			frontContainer.height = mediaInfo.height*scale;
 			
@@ -582,15 +570,17 @@ package
 			
 			advertChart.setWH(scale);
 			
-			if(stage.displayState == StageDisplayState.FULL_SCREEN)
+//			if(stage.displayState == StageDisplayState.FULL_SCREEN)
 				recommend.scaleWH(w, h);
-			else
-				recommend.scaleWH(mediaInfo.width, mediaInfo.height);
+//			else
+//				recommend.scaleWH(mediaInfo.width, mediaInfo.height);
+			
+			loadingBar.setWH(w, h);
 		}
 		
 		private function weboPlayerLog(event:GlobalServerEvent):void
 		{
-			log(event.data);
+//			log(event.data);
 		}
 		
 		private function log(...args):void

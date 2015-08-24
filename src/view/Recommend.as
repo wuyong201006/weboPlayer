@@ -306,13 +306,13 @@ package view
 			if(bg != null)
 			{
 				bg.width = 482*scale;				
-				bg.height = height/*271*scale*/;
+				bg.height = height+40/*271*scale*/;
 			}
 			
 			if(mask != null)
 			{
 				mask.width = 482*scale;
-				mask.height = height;
+				mask.height = height+40;
 			}
 			
 			if(container != null)
@@ -449,6 +449,7 @@ package view
 }
 
 import flash.display.Bitmap;
+import flash.display.StageDisplayState;
 import flash.events.Event;
 import flash.events.MouseEvent;
 import flash.net.URLLoader;
@@ -541,6 +542,27 @@ class RecommendUnit extends Group
 		}
 	}
 	
+	private function setTitle():void
+	{
+		if(label == null || videoInfo == null)return;
+		
+		var str:String = ""+videoInfo.title;
+		var len:Number = int(this.width/13)-2;
+		var s:String = "";
+		for(var i:int=0;i<len;i++)
+		{
+			if(str.charAt(i) != "")
+				s += str.charAt(i);
+			else
+				break;
+		}
+		
+		if(str.charAt(len) != "")
+			s += "...";
+		
+		label.text = s;
+	}
+	
 	private var minW:Number=190;
 	private var minH:Number = 108;
 	public function scaleWH():void
@@ -573,8 +595,19 @@ class RecommendUnit extends Group
 			label.width = this.width;
 			label.bottom = 5*scale;
 		}
+		
+		if(labelBack != null)
+		{
+			if(stage && stage.displayState == StageDisplayState.FULL_SCREEN)
+				labelBack.height = 40;
+			else
+				labelBack.height = 25;
+		}
+		
+		setTitle();
 	}
 	
+	private var labelBack:Rect;
 	private var label:Label;
 	private var IsInit:Boolean=false;
 	public function initUI(IsVideo:Boolean=true):void
@@ -601,6 +634,14 @@ class RecommendUnit extends Group
 				video.skinName = bit;
 			});
 			
+			labelBack = new Rect();
+			labelBack.bottom = 0;
+			labelBack.fillColor = 0x0;
+			labelBack.percentWidth = 100;
+			labelBack.height = 25;
+			addElement(labelBack);
+			labelBack.alpha = 0.8;
+			
 			label = new Label();
 			label.horizontalCenter = 0;
 			label.bottom = 5;
@@ -609,6 +650,8 @@ class RecommendUnit extends Group
 			label.textAlign = TextFormatAlign.CENTER;
 			addElement(label);
 			label.text = ""+videoInfo.title;
+			
+			setTitle();
 		}
 		else
 		{

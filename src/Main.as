@@ -11,6 +11,7 @@ package
 	import flash.net.URLLoader;
 	import flash.system.Security;
 	import flash.utils.clearTimeout;
+	import flash.utils.getTimer;
 	import flash.utils.setTimeout;
 	
 	import constant.NetConstant;
@@ -26,7 +27,9 @@ package
 	import org.flexlite.domCore.Injector;
 	import org.flexlite.domUI.components.Group;
 	import org.flexlite.domUI.components.Label;
+	import org.flexlite.domUI.components.Rect;
 	import org.flexlite.domUI.core.Theme;
+	import org.flexlite.domUI.managers.IFocusManager;
 	import org.flexlite.domUI.managers.SystemManager;
 	import org.flexlite.domUI.skins.themes.VectorTheme;
 	
@@ -46,6 +49,8 @@ package
 		
 		private var _frontContainer:Group;
 		private var _behindContainer:Group;
+		
+		private var background:Rect;
 		
 		private var loadingBar:LoadingBar;
 		private var advertChart:AdvertChart;
@@ -81,6 +86,7 @@ package
 			super();
 			
 			Injector.mapClass(Theme,VectorTheme);
+			stage.color = 0x000000;
 			//收藏页
 			//navigateToURL( (new URLRequest("javascript:window.external.addFavorite('http://qq.com', '收藏名字')")), "_self");
 			
@@ -89,6 +95,7 @@ package
 			
 //			playerParams.id = 566389;
 //			playerParams.id = "18d24f91-c252-9644-32b8-902bcf309103";
+			playerParams.id = 591376;
 			
 			_main = this;
 			
@@ -321,12 +328,11 @@ package
 			var object:Object = event.data;
 			rateCount++;
 			
-			//			playLabel.text = "当前播放时间"+(Number(event.data));
+			controllBar.updateProgressBarCur(Number(object.time)*10);
 			
 			if(rateCount >= 10)
 			{
 				rateCount = 0;
-				controllBar.updateProgressBarCur(Number(object.time));
 				
 				controllBar.updateLoadProgress(object.bytesProgress);
 			}
@@ -340,7 +346,7 @@ package
 //				IsPlayer = false;				
 //			}
 			
-			controllBar.updateProgressBarMaximum(Number(event.data));
+			controllBar.updateProgressBarMaximum(Number(event.data)*10);
 			
 			fullScreenChangeHandler(null);
 		}
@@ -363,12 +369,12 @@ package
 			if(recommend.panel_open_status)
 				recommend.close();
 			
-			playerSeek(Number(event.data));
+			playerSeek(Number(event.data)/10);
 		}
 		
 		private function playerSeekUpdate(event:GlobalServerEvent):void
 		{
-			playerSeek(Number(event.data));
+			playerSeek(Number(event.data)/10);
 		}
 	
 		private function playerSeek(value:Number):void
@@ -384,6 +390,8 @@ package
 					recommend.close();
 				
 				playerSeek(0);
+				
+				controllBar.progressBarEnabled = false;
 				return;
 			}
 			playerPause();
@@ -407,6 +415,8 @@ package
 				advertChart.close();
 			if(share.panel_open_status)
 				share.close();
+			
+			controllBar.progressBarEnabled = false;
 			
 			fullScreenChangeHandler(null);
 		}
@@ -470,25 +480,56 @@ package
 			{
 				_userActive = value;
 				
-				showControllBar(userActive);
+				showControllBar(userActive, visibleType);
 			}
 		}
 		
-		//Hide&ShowAnimation
-		private function showControllBar(userActive:Boolean):void
+		private var _visibleType:int;
+		public function get visibleType():int
 		{
-			if(topBar)
+			return _visibleType;
+		}
+		
+		public function set visibleType(value:int):void
+		{
+			_visibleType = value;
+		}
+		//Hide&ShowAnimation
+		private function showControllBar(userActive:Boolean, visibleType:int):void
+		{
+			if(visibleType == 0)
 			{
-				TweenLite.killTweensOf(topBar);
+				if(topBar)
+				{
+					TweenLite.killTweensOf(topBar);
+					
+					TweenLite.to(topBar, 1, {top:(userActive ? 0 : -topBar.height)});
+				}
 				
-				TweenLite.to(topBar, 1, {top:(userActive ? 0 : -topBar.height)});
+				if(controllBar)
+				{
+					TweenLite.killTweensOf(controllBar);
+					
+					TweenLite.to(controllBar, 1, {bottom:(userActive ? 0 : -controllBar.height-8)});
+				}
 			}
-			
-			if(controllBar)
+			else if(visibleType ==1)
 			{
-				TweenLite.killTweensOf(controllBar);
-				
-				TweenLite.to(controllBar, 1, {bottom:(userActive ? 0 : -controllBar.height-8)});
+				if(topBar)
+				{
+					TweenLite.killTweensOf(topBar);
+					
+					TweenLite.to(topBar, 1, {top:(userActive ? 0 : -topBar.height)});
+				}
+			}
+			else if(visibleType == 2)
+			{
+				if(controllBar)
+				{
+					TweenLite.killTweensOf(controllBar);
+					
+					TweenLite.to(controllBar, 1, {bottom:(userActive ? 0 : -controllBar.height-8)});
+				}
 			}
 		}
 		
@@ -511,7 +552,7 @@ package
 			
 			monitorId = setTimeout(function():void
 			{
-				if(loadingBar && loadingBar.panel_open_status || stage && stage.displayState == StageDisplayState.NORMAL)
+				if(loadingBar && loadingBar.panel_open_status || stage.displayState == StageDisplayState.NORMAL && !IsNormal)
 				{
 					return;
 				}
@@ -530,6 +571,7 @@ package
 			fullScreenChangeHandler(null);
 		}
 		
+		private var IsNormal:Boolean=false;
 		private function fullScreenChangeHandler(event:FullScreenEvent):void
 		{
 			if(!IsInit)return;
@@ -550,12 +592,38 @@ package
 //			if(w == minW)
 //				h = minH;
 			
+			IsNormal = (mediaInfo.width/mediaInfo.height) == 4/3;
+			if(IsNormal)
+				visibleType = 1;
+			
+			if(stage && stage.displayState == StageDisplayState.FULL_SCREEN)
+				visibleType = 0;
+			
+			if(stage.displayState == StageDisplayState.NORMAL && IsNormal)
+				userActive = false;
+			
 			var perw:Number = w / mediaInfo.width;
-			var perh:Number = (stage && stage.displayState == StageDisplayState.FULL_SCREEN ? h : (h-80)) / mediaInfo.height;
+			var perh:Number = (stage.displayState == StageDisplayState.FULL_SCREEN ? h : (IsNormal ? h-40 : h-80)) / mediaInfo.height;
 			var scale:Number = perw < perh ? perw : perh;
 			
 			videoScreen.width = mediaInfo.width*scale;
 			videoScreen.height = mediaInfo.height*scale;
+			
+			if(stage.displayState == StageDisplayState.FULL_SCREEN)
+			{
+				videoScreen.y = (h-videoScreen.height)/2;
+			}
+			else
+			{
+				if(stage.displayState == StageDisplayState.NORMAL && IsNormal)
+				{
+					videoScreen.y = 0;
+				}
+				else
+				{
+					videoScreen.y = ((h-80)-videoScreen.height)/2;
+				}
+			}
 //			log("videoScreenWidth"+videoScreen.width+"videoScreenHeight"+videoScreen.height);
 			frontContainer.width = mediaInfo.width*scale;
 			frontContainer.height = mediaInfo.height*scale;
@@ -602,10 +670,16 @@ package
 		{
 			super.createChildren();
 			
+			background = new Rect();
+			background.percentWidth = 100;
+			background.percentHeight = 100;
+			background.fillColor = 0x000000;
+			addElement(background);
+			
 			videoScreen = new VideoUI();
 //			videoScreen.percentHeight = videoScreen.percentWidth = 100;
 			videoScreen.horizontalCenter = 0;
-			videoScreen.verticalCenter = 0;
+//			videoScreen.verticalCenter = 0;
 			addElement(videoScreen);
 			videoScreen.buttonMode = true;
 			videoScreen.addEventListener(MouseEvent.CLICK, clickPlayPause);

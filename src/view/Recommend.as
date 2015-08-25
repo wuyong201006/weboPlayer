@@ -8,6 +8,10 @@ package view
 	import flash.events.TimerEvent;
 	import flash.net.URLLoader;
 	import flash.utils.Timer;
+	import flash.utils.clearInterval;
+	import flash.utils.getTimer;
+	import flash.utils.setInterval;
+	import flash.utils.setTimeout;
 	
 	import component.skin.button.PlayerButtonSkin;
 	
@@ -36,7 +40,7 @@ package view
 		private var nextBtn:Button;
 		
 		private var lastIndex:int=-1;
-		private var curIndex:int=0;
+		private var _curIndex:int=0;
 		
 		private var minValue:int=1;
 		private var maxValue:int=5;
@@ -44,10 +48,10 @@ package view
 		private var lastRecommend:Group;
 		private var curRecommend:Group;
 		
-		private var _videoList:Vector.<VideoInfo>;
-		private var timer:Timer;
+		private var lastTweenlite:TweenLite;
+		private var curTweenlite:TweenLite;
 		
-		private var delayTime:int;
+		private var _videoList:Vector.<VideoInfo>;
 		
 		private var _scale:Number=1;
 		public function Recommend()
@@ -60,12 +64,21 @@ package view
 			addEventListener(Event.ADDED_TO_STAGE, addedToStage);
 		}
 		
+		public function get curIndex():int
+		{
+			return _curIndex;
+		}
+
+		public function set curIndex(value:int):void
+		{
+			_curIndex = value;
+		}
+
 		private function addedToStage(event:Event):void
 		{
 			addEventListener(MouseEvent.ROLL_OVER, rollOver);
-			addEventListener(MouseEvent.ROLL_OUT, rollOut);
 			
-			createTimer();
+//			createTimer();
 			
 //			var test:Vector.<VideoInfo> = new Vector.<VideoInfo>();
 //			for(var i:int=0;i<7;i++)
@@ -79,20 +92,20 @@ package view
 		private function rollOver(event:MouseEvent):void
 		{
 			addEventListener(MouseEvent.MOUSE_MOVE, moveHandler);
-			
+			addEventListener(MouseEvent.ROLL_OUT, rollOut);
 		}
 		
 		private function rollOut(event:MouseEvent):void
 		{
 			removeEventListener(MouseEvent.MOUSE_MOVE, moveHandler);
-			
-			timer && timer.start();
+			removeEventListener(MouseEvent.ROLL_OUT, rollOut);
+			this.panel_open_status && createTimer();
 		}
 		
 		private function moveHandler(event:MouseEvent):void
 		{
-			delayTime = 0;
-			timer && timer.stop();
+			clearTimer();
+//			destory();
 		}
 		
 		private function requestPlayerList():void
@@ -149,36 +162,53 @@ package view
 			maxValue = int((_videoList.length+1)/4)+((_videoList.length+1)%4 >0 ? 1 : 0);
 			
 			start();
-			timer.start();
+			createTimer();
 		}
 		
 		private function createTimer():void
 		{
-			timer = new Timer(1000);
-			timer.addEventListener(TimerEvent.TIMER, timerHandler);
+			if(videoList == null)return;
+			
+			addEventListener(Event.ENTER_FRAME, loop);
 		}
 		
-		private function timerHandler(event:TimerEvent):void
+		
+		private function clearTimer():void
+		{
+			lastTime = 0;
+			removeEventListener(Event.ENTER_FRAME, loop);
+		}
+		
+		private var lastTime:Number=0;
+		private function loop(event:Event):void
 		{
 			if(maxValue <= 1)return;
 			
-			delayTime++;
+			if(getTimer()-lastTime < 4000)return;
 			
-			if(delayTime >= 4)
+			curIndex++;
+			if(curIndex >= maxValue)
+				curIndex = 0;
+			
+			clearTimer();
+			createTimer();
+			if(curIndex == lastIndex)
 			{
-				delayTime = 0;
-				curIndex++;
-				if(curIndex >= maxValue)
-					curIndex = 0;
-				
-				start();
+				return;
 			}
+			
+			lastTime = getTimer();
+			
+			start();
 		}
 		
 		private var IsClick:Boolean=false;
 		private function clickHandler(event:MouseEvent):void
 		{
-			delayTime = 0;
+			clearTimer();
+			
+			if(moveExcute())return;
+			
 			if(event.target == preBtn)
 			{
 				IsClick = true;
@@ -198,10 +228,25 @@ package view
 			
 			start();
 		}
+		
+		/**
+		 *	是否在移动中 
+		 */
+		private function moveExcute():Boolean
+		{
+			if(IsMove)return true;
+			IsMove = true;
+			
+			return false;
+		}
+		
 		private function start():void
 		{
-			if(IsMove)return;
-			IsMove = true;
+			if(lastIndex == curIndex == 1)
+			{
+				trace("");
+			}
+			trace("curIndex"+curIndex+"getTimer"+(getTimer()-lastTime));
 			
 			var offIndex:int = curIndex == 0 ? curIndex*4 : curIndex*4-1;
 			var list:Vector.<VideoInfo> = new Vector.<VideoInfo>();
@@ -235,12 +280,12 @@ package view
 //			TweenLite.delayedCall(2, function():void{
 			if(lastRecommend != null)
 			{
-				TweenLite.to(lastRecommend,  1, {x:IsLeft ? -wid : wid, ease:Linear.ease, onComplete:function():void{
+				lastTweenlite = TweenLite.to(lastRecommend,  1, {x:IsLeft ? -wid : wid, ease:Linear.ease, onComplete:function():void{
 					removeRecommend(lastRecommend);
 				}});
 			}
 			
-			TweenLite.to(curRecommend, 1, {x:0, ease:Linear.ease, onComplete:function():void{
+				curTweenlite = TweenLite.to(curRecommend, 1, {x:0, ease:Linear.ease, onComplete:function():void{
 				lastRecommend = curRecommend;
 				lastIndex = curIndex;
 				
@@ -306,7 +351,7 @@ package view
 			if(bg != null)
 			{
 				bg.width = 482*scale;				
-				bg.height = height+40/*271*scale*/;
+				bg.height = height+80/*271*scale*/;
 			}
 			
 			if(mask != null)
@@ -371,7 +416,7 @@ package view
 			bg.fillColor = 0x000000;
 			bg.width = /*percentWidth*/482*scale;
 			bg.height = /*271*/355*scale;
-			bg.top = -40;
+			bg.top = -80;
 			bg.alpha = 0.6;
 			addElement(bg);
 			
@@ -412,7 +457,9 @@ package view
 		
 		 protected function removeRecommend(group:Group):void
 		 {
-			 if(container.getElementIndex(group) >= 0 )
+			 if(container == null || group == null)return;
+			 
+			 if(container.getElementIndex(group) >= 0)
 				 container.removeElement(group);
 			 
 			 while(group.numChildren)
@@ -424,6 +471,8 @@ package view
 						re = null;					 
 				 }
 			 }
+			 
+			 group = null;
 		 }
 		 
 		 override public function open():void
@@ -433,17 +482,36 @@ package view
 			 if(wid > 0 || hei > 0)
 				 scaleWH(wid, hei);
 			 
+			 destory();
+			 
 			 requestPlayerList();
 		 }
 		 
 		 override public function close():void
 		 {
 			super.close(); 
+			destory();
 		 }
 		 
 		 public function destory():void
 		 {
-			 timer && timer.stop();
+			clearTimer();
+			 
+			 curIndex = 0;
+			 IsClick = false;
+			 IsMove = false;
+			 
+			 lastTweenlite && lastTweenlite.kill();
+			 curTweenlite && curTweenlite.kill();
+			
+			 while(container.numElements > 0)
+			 {
+				 var group:Group = container.getElementAt(0) as Group;
+				 removeRecommend(group);
+			 }
+			 
+			 if(videoList != null)
+			 	videoList.length = 0;
 		 }
 	}
 }

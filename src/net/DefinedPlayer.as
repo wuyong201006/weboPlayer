@@ -74,6 +74,11 @@ package net
 		public function set playStatus(value:Boolean):void
 		{
 			_playStatus = value;
+			
+			if(!value)
+				heartbeat && heartbeat.stop();
+			else
+				heartbeat && heartbeat.start();
 		}
 
 		public function get netStream():NetStream

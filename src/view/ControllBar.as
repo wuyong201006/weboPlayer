@@ -32,6 +32,7 @@ package view
 	import org.flexlite.domUI.components.Rect;
 	import org.flexlite.domUI.components.UIAsset;
 	import org.flexlite.domUI.components.VSlider;
+	import org.flexlite.domUI.effects.Fade;
 	
 	public class ControllBar extends Group
 	{
@@ -79,9 +80,16 @@ package view
 		
 		public function updateProgressBarCur(curValue:Number, maxValue:Number=0):void
 		{
+			
 			progressBar.value = curValue;
+			
+			if(maxValue > 0 &&  maxValue == curValue)
+			{
+				progressBarEnabled = true;
+			}
+			
 			maxValue = progressBar.maximum;
-			curProLabel.text = DateString.dateToString(curValue%3600)+"/"+DateString.dateToString(maxValue%3600);
+			curProLabel.text = DateString.dateToString(curValue/10%3600)+"/"+DateString.dateToString(maxValue/10%3600);
 		}
 		
 		public function set playStatus(value:Boolean):void
@@ -113,10 +121,21 @@ package view
 		
 		private function progressBarChange(event:Event):void
 		{
-			dispatchEvent( new PlayerEvent(PlayerEvent.CONTROLLBAR_UPDATE, progressBar.value));
 			var value:Number = progressBar.value;
 			var maxValue:Number = progressBar.maximum;
-			curProLabel.text = DateString.dateToString(value%3600)+"/"+DateString.dateToString(maxValue%3600);
+			
+			if(maxValue > 0 &&  maxValue == value)
+			{
+				progressBarEnabled = true;
+			}
+			
+			dispatchEvent( new PlayerEvent(PlayerEvent.CONTROLLBAR_UPDATE, value));
+			curProLabel.text = DateString.dateToString(value/10%3600)+"/"+DateString.dateToString(maxValue/10%3600);
+		}
+		
+		public function set progressBarEnabled(value:Boolean):void
+		{
+			progressBar.mouseEnabled = progressBar.mouseChildren = !(progressBar.IsComplete = value);
 		}
 		
 		protected function fullScreenChangeHandler(event:FullScreenEvent):void
@@ -270,8 +289,6 @@ package view
 			var perw:Number = width / minW;
 			var perh:Number = height / minH;
 			var scale:Number = perw < perh ? perw : perh;
-			
-			
 		}
 		
 		override protected function measure():void
@@ -428,6 +445,7 @@ package view
 			progressBar.stepSize = 1;
 			progressBar.skinName = PlayerHSliderSkin;
 			progressBar.addEventListener(Event.CHANGE, progressBarChange);
+			progressBar.liveDragging = true;
 		}
 	}
 }

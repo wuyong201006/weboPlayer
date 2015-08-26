@@ -50,7 +50,7 @@ package view
 			var playerInfo:Object = Main.main.playerInfo;
 			//分享qq空间
 			var pic:String = String(playerInfo.thumburl).replace(/\n/g, "");
-			var title:String = playerInfo.title;//简述标题
+			var title:String = playerInfo.sharetitle != "" ?  playerInfo.sharetitle : playerInfo.title;//专题/简述标题
 			var summary:String = playerInfo.summary;
 			var rLink:String = playerInfo.linksUrl;//网站链接
 			var url:String = "http://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?title="+encodeURIComponent(title)+'&url='+encodeURIComponent(rLink)+
@@ -63,10 +63,11 @@ package view
 			var playerInfo:Object = Main.main.playerInfo;
 			//分享webo
 			var pic:String = String(playerInfo.thumburl).replace(/\n/g, "");
+			var title:String = playerInfo.sharetitle != "" ?  playerInfo.sharetitle : playerInfo.title;//专题/简述标题
 			var summary:String = playerInfo.summary;
-			var rLink:String = playerInfo.linksUrl;//网站链接
+			var rLink:String = NetConstant.PLAYER_WEBO_LINK_URL+"id="+Main.main.playerParams.id;//网站链接
 			var url:String = "http://service.weibo.com/share/share.php?url=" + encodeURIComponent(rLink) + 
-				"&title="+ encodeURIComponent(summary) +"&pic=" + encodeURIComponent(pic);
+				"&title="+ encodeURIComponent(title) +"&pic=" + encodeURIComponent(pic);
 			
 			NetManager.getInstance().sendURL(url);
 		}

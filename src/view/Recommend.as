@@ -179,6 +179,7 @@ package view
 		private function loop(event:Event):void
 		{
 			if(maxValue <= 1)return;
+//			if(moveExcute())return;
 			if(getTimer()-lastTime < 4000)return;
 			
 			curIndex++;
@@ -201,7 +202,7 @@ package view
 		private function clickHandler(event:MouseEvent):void
 		{
 			clearTimer();
-			
+			lastTime = getTimer();
 			if(moveExcute())return;
 			
 			if(event.target == preBtn)
@@ -586,8 +587,8 @@ class RecommendUnit extends Group
 		switch(event.target)
 		{
 			case rePlay:
-				GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_SEEK_UPDATE, 0));
 				GlobalServer.dispatchEvent(new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_START));
+				GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_SEEK_UPDATE, 0));
 				break;
 			case store:
 //				favorites();

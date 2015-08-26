@@ -6,6 +6,8 @@ package view
 	import flash.events.Event;
 	import flash.events.FullScreenEvent;
 	import flash.events.MouseEvent;
+	import flash.utils.clearInterval;
+	import flash.utils.setInterval;
 	
 	import component.skin.button.PauseButtonSkin;
 	import component.skin.button.PlayButtonSkin;
@@ -129,12 +131,25 @@ package view
 			
 			var value:Number = progressBar.value;
 			var maxValue:Number = progressBar.maximum;
-			
 			dispatchEvent( new PlayerEvent(PlayerEvent.CONTROLLBAR_UPDATE, value));
 			curProLabel.text = DateString.dateToString(value/10%3600)+"/"+DateString.dateToString(maxValue/10%3600);
 			
 			if(progressBar.IsComplete)
-				IsEnd = true;;
+			{
+				IsEnd = true;
+				refresCurPro();
+			}
+		}
+		
+		private var refresId:uint;
+		private function refresCurPro():void
+		{
+			refresId = setInterval(function():void{
+			clearInterval(refresId);
+			var value:Number = progressBar.value;
+			var maxValue:Number = progressBar.maximum;
+			curProLabel.text = DateString.dateToString(value/10%3600)+"/"+DateString.dateToString(maxValue/10%3600);
+			}, 500);
 		}
 		
 		protected function fullScreenChangeHandler(event:FullScreenEvent):void

@@ -24,6 +24,7 @@ package constant
 		
 		//外部分享地址
 		public static const PLAYER_LINK_URL:String = "http://web.newsapp.cibntv.net/app/play/?";
+		public static const PLAYER_WEBO_LINK_URL:String = "http://www.tvm.cn/ishare/play/play.html?";
 		
 		public static const PLAYER_DOMAIN_OLD:String = "www.tvm.cn";
 		public static const PLAYER_DOMAIN_LAST:String = "web.newsapp.cibntv.net";

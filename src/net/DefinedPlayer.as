@@ -194,14 +194,10 @@ package net
 					IsBufferFull = true;
 					if(curTi < BUFFERMIN)
 					{
-						trace("curTi"+curTi);
-						
 						if(playStatus)
 							pause();						
 						return;
 					}
-					
-					trace("across");
 					defineBufferFull();
 					break;
 				case "NetStream.Play.Start":

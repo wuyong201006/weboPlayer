@@ -72,6 +72,7 @@ package
 		private var _playerInfo:Object={
 			url:null,//(mp4url)
 			thumburl:null,//缩略图
+			sharetitle:null, //专题
 			title:null,//标题
 			summary:null,//总结
 			linksUrl:null//来源链接
@@ -186,6 +187,8 @@ package
 			var data:Object = JSON.parse(loader.data);
 			if(data.status == "failed")
 				return;
+			
+			//data.sharetitle
 			if(IsDigitalID)
 			{
 				var entrys:Array = data.entry;
@@ -193,6 +196,7 @@ package
 				{
 					var da:Object = entrys[i];
 					var pInfo:Object = new Object();
+					pInfo.sharetitle = data.sharetitle;
 					pInfo.title = da.title;
 					pInfo.url = da.media.content.url;
 					pInfo.summary = da.summary;
@@ -208,6 +212,7 @@ package
 				var entry:Object = data.feed.entry;
 				if(entry != null)
 				{
+					playerInfo.sharetitle = "";
 					playerInfo.title = entry.title.$t;
 					playerInfo.url  = entry.media$group.media$content[0].url;
 					playerInfo.summary = entry.summary.$t;
@@ -225,6 +230,7 @@ package
 				return;
 				
 			var data:Object = playerInfoList[playerCurIndex];
+			playerInfo.sharetitle = data.sharetitle;
 			playerInfo.title = data.title;
 			playerInfo.url  = data.url;
 			playerInfo.summary = data.summary;
@@ -339,9 +345,13 @@ package
 		private function controllBarUpdate(event:PlayerEvent):void
 		{
 //			definedPlayer.seek(Number(event.data));
+			if(!definedPlayer.playStatus)
+				controllBar.playStatus = true;
+			
+			if(advertChart.panel_open_status)
+				advertChart.close();
 			if(recommend.panel_open_status)
 				recommend.close();
-			
 			playerSeek(Number(event.data)/10);
 		}
 		
@@ -388,6 +398,8 @@ package
 				advertChart.close();
 			if(share.panel_open_status)
 				share.close();
+			
+			controllBar.playStatus = true;
 			
 			controllBar.progressBarEnabled = true;
 			
@@ -536,7 +548,7 @@ package
 				}
 				
 				userActive = false;
-			},2000);
+			},1000);
 		}
 		
 		private function resizeHandler(event:Event):void
@@ -594,7 +606,7 @@ package
 				}
 				else
 				{
-					videoScreen.y = ((h-80)-videoScreen.height)/2;
+					videoScreen.y = ((h-80)-videoScreen.height)/2+40;
 				}
 			}
 //			log("videoScreenWidth"+videoScreen.width+"videoScreenHeight"+videoScreen.height);

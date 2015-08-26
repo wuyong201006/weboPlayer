@@ -57,12 +57,10 @@ package component.slider
 		 override protected function setValue(value:Number):void
 		 {
 			 if(IsComplete)return;
-			 
 			 if(IsFinish && value == maximum)
 			 {
 				setEnabled = false; 
 			 }
-			 
 			 super.setValue(value);
 		 }
 //		 override protected function updateSkinDisplayList():void

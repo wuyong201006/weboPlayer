@@ -5,15 +5,29 @@ package component.slider
 	
 	public class PlayerHSlider extends HSlider
 	{
+		/**
+		 *	加载进度 
+		 */
+		public var progress:ProgressBar;
+		
+		/**播放到结束**/
+		private var _IsFinish:Boolean=false;
 		public function PlayerHSlider()
 		{
 			super();
 		}
 		
-		/**
-		 *	加载进度 
-		 */
-		public var progress:ProgressBar;
+		
+
+		public function get IsFinish():Boolean
+		{
+			return _IsFinish;
+		}
+
+		public function set IsFinish(value:Boolean):void
+		{
+			_IsFinish = value;
+		}
 
 		 public function get IsComplete():Boolean
 		 {
@@ -30,6 +44,12 @@ package component.slider
 			progress.value = value;
 		}
 		 
+		 public function set setEnabled(value:Boolean):void
+		 {
+			 IsComplete = !value;
+			 this.mouseEnabled = this.mouseChildren = value;
+		 }
+		 
 		 /**
 		 *	进度条到最后了 
 		 */
@@ -37,6 +57,11 @@ package component.slider
 		 override protected function setValue(value:Number):void
 		 {
 			 if(IsComplete)return;
+			 
+			 if(IsFinish && value == maximum)
+			 {
+				setEnabled = false; 
+			 }
 			 
 			 super.setValue(value);
 		 }

@@ -5,13 +5,8 @@ package view
 	
 	import flash.events.Event;
 	import flash.events.MouseEvent;
-	import flash.events.TimerEvent;
 	import flash.net.URLLoader;
-	import flash.utils.Timer;
-	import flash.utils.clearInterval;
 	import flash.utils.getTimer;
-	import flash.utils.setInterval;
-	import flash.utils.setTimeout;
 	
 	import component.skin.button.PlayerButtonSkin;
 	
@@ -162,6 +157,7 @@ package view
 			maxValue = int((_videoList.length+1)/4)+((_videoList.length+1)%4 >0 ? 1 : 0);
 			
 			start();
+			lastTime = getTimer();
 			createTimer();
 		}
 		
@@ -175,7 +171,7 @@ package view
 		
 		private function clearTimer():void
 		{
-			lastTime = 0;
+//			lastTime = 0;
 			removeEventListener(Event.ENTER_FRAME, loop);
 		}
 		
@@ -183,7 +179,6 @@ package view
 		private function loop(event:Event):void
 		{
 			if(maxValue <= 1)return;
-			
 			if(getTimer()-lastTime < 4000)return;
 			
 			curIndex++;
@@ -242,12 +237,6 @@ package view
 		
 		private function start():void
 		{
-			if(lastIndex == curIndex == 1)
-			{
-				trace("");
-			}
-			trace("curIndex"+curIndex+"getTimer"+(getTimer()-lastTime));
-			
 			var offIndex:int = curIndex == 0 ? curIndex*4 : curIndex*4-1;
 			var list:Vector.<VideoInfo> = new Vector.<VideoInfo>();
 			for(var i:int=offIndex;i<videoList.length;i++)
@@ -482,8 +471,7 @@ package view
 			 if(wid > 0 || hei > 0)
 				 scaleWH(wid, hei);
 			 
-			 destory();
-			 
+//			 destory();
 			 requestPlayerList();
 		 }
 		 
@@ -589,8 +577,8 @@ class RecommendUnit extends Group
 	
 	private function playVideo(event:MouseEvent):void
 	{
-		GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.RECOMMEND_PLAY, videoInfo.id));
 		GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.PLAYER_PLAY_START));
+		GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.RECOMMEND_PLAY, videoInfo.id));
 	}
 	
 	private function clickHandler(event:MouseEvent):void

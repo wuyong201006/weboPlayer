@@ -95,7 +95,7 @@ package
 			
 //			playerParams.id = 566389;
 //			playerParams.id = "18d24f91-c252-9644-32b8-902bcf309103";
-			playerParams.id = 591376;
+//			playerParams.id = 591376;
 			
 			_main = this;
 			
@@ -217,26 +217,6 @@ package
 					initPlayer();
 				}
 			}
-//			playerInfo.title = data.display_name;
-//			playerInfo.url = data.stream.url;
-//			playerInfo.summary = data.summary;
-//			var u:String	= data.image.url;
-////			playerInfo.thumburl = u.replace(/\s/g, "").split("\x00-\x20").join("");
-////			playerInfo.thumburl = "";
-//			playerInfo.thumburl = u;
-			
-//			var swf:String = data.embed_code;
-//			if(swf.indexOf(NetConstant.PLAYER_DOMAIN_OLD) > 0)
-//			{
-//				swf = swf.replace(NetConstant.PLAYER_DOMAIN_OLD, NetConstant.PLAYER_DOMAIN_LAST);
-//			}
-//			playerInfo.swfUrl =swf;
-			
-//			var link:Array = String(data.links.url).split("?");
-//			playerInfo.linksUrl = NetConstant.PLAYER_LINK_URL+(link.length > 1 ? link[1]:"");
-			
-//			if(definedPlayer == null)
-			
 		}
 		
 		private function continueToPlay():void
@@ -285,21 +265,12 @@ package
 			
 			GlobalServer.addEventListener(GlobalServerEvent.PLAYER_PLAY_PAUSE, playerPlayPause);
 			
-			definedPlayer.bufferTime = 90;
+			definedPlayer.bufferTime = 0.5;
 			definedPlayer.play();
 			
 			loadingBar.open();
 			
 			controllBar.playStatus = true;
-//			playerStatus = !playerParams.auto_play;
-//			
-//			videoScreenChange();
-//			if(ExternalInterface.available)
-//			{
-//				ExternalInterface.addCallback("seek", seekExternal);//秒
-//			}
-			
-//			favorites();
 		}
 		
 		/**收入收藏夹*/
@@ -317,6 +288,8 @@ package
 		
 		private function recommendPlay(event:GlobalServerEvent):void
 		{
+			controllBar.progressBarEnabled = true;
+			
 			playerParams.id = event.data;
 			
 			requestPlayer();
@@ -391,7 +364,7 @@ package
 				
 				playerSeek(0);
 				
-				controllBar.progressBarEnabled = false;
+				controllBar.progressBarEnabled = true;
 				return;
 			}
 			playerPause();
@@ -416,7 +389,7 @@ package
 			if(share.panel_open_status)
 				share.close();
 			
-			controllBar.progressBarEnabled = false;
+			controllBar.progressBarEnabled = true;
 			
 			fullScreenChangeHandler(null);
 		}

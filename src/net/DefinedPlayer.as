@@ -9,6 +9,7 @@ package net
 	import flash.utils.Timer;
 	import flash.utils.clearInterval;
 	import flash.utils.clearTimeout;
+	import flash.utils.getTimer;
 	import flash.utils.setInterval;
 	import flash.utils.setTimeout;
 	
@@ -18,7 +19,7 @@ package net
 	
 	public class DefinedPlayer extends EventDispatcher
 	{
-		public const BUFFERMIN:Number = 3;//缓存最少时间
+		public const BUFFERMIN:Number = 1;//缓存最少时间
 		private var _url:String="";
 		private var _mediaInfo:Object;
 		private var _druation:Number = 0;
@@ -117,14 +118,19 @@ package net
 			{
 				var dp:DefinedPlayer = this;
 				
+				var lastTimer:Number = 0;
 				timeOut = setInterval(function():void{
+					
+					if(getTimer()-lastTimer < 100)return;
+					lastTimer = getTimer();
+					
 					curTi += 0.1;
 					if(IsBufferFull && curTi > BUFFERMIN)
 					{
 						defineBufferFull();
 					}
 					dp.dispatchEvent(new PlayerEvent(PlayerEvent.PLAYER_BUFFER_UPDATE, curTi/*netStream.bufferLength*/))
-				}, 100);
+				}, 33);
 			}
 		}
 		
@@ -188,11 +194,14 @@ package net
 					IsBufferFull = true;
 					if(curTi < BUFFERMIN)
 					{
+						trace("curTi"+curTi);
+						
 						if(playStatus)
 							pause();						
 						return;
 					}
 					
+					trace("across");
 					defineBufferFull();
 					break;
 				case "NetStream.Play.Start":

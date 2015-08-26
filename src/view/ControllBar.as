@@ -83,13 +83,16 @@ package view
 			
 			progressBar.value = curValue;
 			
-			if(maxValue > 0 &&  maxValue == curValue)
-			{
-				progressBarEnabled = true;
-			}
+//			progressBar.setEnabled = !(curValue == maxValue);
 			
 			maxValue = progressBar.maximum;
 			curProLabel.text = DateString.dateToString(curValue/10%3600)+"/"+DateString.dateToString(maxValue/10%3600);
+		}
+		
+		public function set progressBarEnabled(value:Boolean):void
+		{
+			progressBar.setEnabled = value;
+			IsEnd = !value;
 		}
 		
 		public function set playStatus(value:Boolean):void
@@ -119,23 +122,19 @@ package view
 			dispatchEvent( new PlayerEvent(PlayerEvent.CONTROLLBAR_PLAY, data));
 		}
 		
+		private var IsEnd:Boolean=false;
 		private function progressBarChange(event:Event):void
 		{
+			if(IsEnd)return;
+			
 			var value:Number = progressBar.value;
 			var maxValue:Number = progressBar.maximum;
 			
-			if(maxValue > 0 &&  maxValue == value)
-			{
-				progressBarEnabled = true;
-			}
-			
 			dispatchEvent( new PlayerEvent(PlayerEvent.CONTROLLBAR_UPDATE, value));
 			curProLabel.text = DateString.dateToString(value/10%3600)+"/"+DateString.dateToString(maxValue/10%3600);
-		}
-		
-		public function set progressBarEnabled(value:Boolean):void
-		{
-			progressBar.mouseEnabled = progressBar.mouseChildren = !(progressBar.IsComplete = value);
+			
+			if(progressBar.IsComplete)
+				IsEnd = true;;
 		}
 		
 		protected function fullScreenChangeHandler(event:FullScreenEvent):void
@@ -409,11 +408,11 @@ package view
 			})
 				
 			var g:Group = new Group();
-//			g.right = 20;
-//			g.verticalCenter = 0;
-//			addElement(g);
-//			g.buttonMode = true;
-//			g.addEventListener(MouseEvent.CLICK, clickGlobal);
+			var logoBack:Rect = new Rect();
+			logoBack.fillColor = 0x1A1E27;
+			logoBack.width = 93;
+			logoBack.height = 21;
+			g.addElement(logoBack);
 			
 			var glogo:UIAsset = new UIAsset();
 			glogo.skinName = new logo;
@@ -446,6 +445,7 @@ package view
 			progressBar.skinName = PlayerHSliderSkin;
 			progressBar.addEventListener(Event.CHANGE, progressBarChange);
 			progressBar.liveDragging = true;
+			progressBar.IsFinish = true;
 		}
 	}
 }

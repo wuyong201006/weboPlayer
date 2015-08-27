@@ -6,6 +6,7 @@ package view
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.net.URLLoader;
+	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
 	
 	import component.skin.button.PlayerButtonSkin;
@@ -47,6 +48,7 @@ package view
 		private var curTweenlite:TweenLite;
 		
 		private var _videoList:Vector.<VideoInfo>;
+		private var videoDictionary:Dictionary;
 		
 		private var _scale:Number=1;
 		public function Recommend()
@@ -71,6 +73,7 @@ package view
 
 		private function addedToStage(event:Event):void
 		{
+			videoDictionary = new Dictionary();
 			addEventListener(MouseEvent.ROLL_OVER, rollOver);
 			
 //			createTimer();
@@ -238,18 +241,26 @@ package view
 		
 		private function start():void
 		{
-			var offIndex:int = curIndex == 0 ? curIndex*4 : curIndex*4-1;
-			var list:Vector.<VideoInfo> = new Vector.<VideoInfo>();
-			for(var i:int=offIndex;i<videoList.length;i++)
+			curRecommend = getRecommendGroup(""+curIndex);
+			if(curRecommend != null)
 			{
-				if(offIndex == 0 && i >= offIndex+3)
-					break;
-				if(i >= offIndex+4)
-					break;
-				list.push(videoList[i]);
+				turn(null);
 			}
-			
-			turn(list);
+			else
+			{
+				var offIndex:int = curIndex == 0 ? curIndex*4 : curIndex*4-1;
+				var list:Vector.<VideoInfo> = new Vector.<VideoInfo>();
+				for(var i:int=offIndex;i<videoList.length;i++)
+				{
+					if(offIndex == 0 && i >= offIndex+3)
+						break;
+					if(i >= offIndex+4)
+						break;
+					list.push(videoList[i]);
+				}
+				
+				turn(list);
+			}
 		}
 		
 		private var IsMove:Boolean=false;
@@ -263,15 +274,21 @@ package view
 			
 			IsClick = false;
 			var wid:Number = this.width;
-			curRecommend = draw(list);	
+			
+			if(list != null)
+				curRecommend = draw(list);
+			
 			curRecommend.x = IsLeft ? wid : -wid;
 			container.addElement(curRecommend);
-			 
+			curRecommend.visible = true;
+			
+			videoDictionary[""+curIndex] = curRecommend; 
 //			TweenLite.delayedCall(2, function():void{
 			if(lastRecommend != null)
 			{
 				lastTweenlite = TweenLite.to(lastRecommend,  1, {x:IsLeft ? -wid : wid, ease:Linear.ease, onComplete:function():void{
-					removeRecommend(lastRecommend);
+//					removeRecommend(lastRecommend);
+					lastRecommend.visible = false;
 				}});
 			}
 			
@@ -282,6 +299,11 @@ package view
 				IsMove = false;
 			}});
 //			});
+		}
+		
+		private function getRecommendGroup(curIndex:String):Group
+		{
+			return videoDictionary[curIndex];
 		}
 		
 		private function draw(list:Vector.<VideoInfo>):Group
@@ -322,16 +344,17 @@ package view
 			
 			if(stage == null)return;
 			
-			if(width < stage.fullScreenWidth)
-				this.width = minW;
-			else
+//			if(width < stage.fullScreenWidth)
+//				this.width = minW;
+//			else
 				this.width = width;
 				
-			if(height < stage.fullScreenHeight)
-				this.height = minH;
-			else
+//			if(height < stage.fullScreenHeight)
+//				this.height = minH;
+//			else
 				this.height = height;
-			
+			GlobalServer.dispatchEvent( new GlobalServerEvent(GlobalServerEvent.WEBOPLAYER_LOG, "recommend height"+this.height));
+				
 			var perw:Number = width / minW;
 			var perh:Number = height / minH;
 			var scale:Number = perw < perh ? perw : perh;
@@ -377,6 +400,10 @@ package view
 			
 			setRecommendWH(reWidth, reHeight, curRecommend);
 			setRecommendWH(reWidth, reHeight, lastRecommend);
+			for(var key:String in videoDictionary)
+			{
+				setRecommendWH(reWidth, reHeight, videoDictionary[key]);
+			}
 		}
 		
 		private function setRecommendWH(width:Number, height:Number, group:Group):void
@@ -493,10 +520,10 @@ package view
 			 lastTweenlite && lastTweenlite.kill();
 			 curTweenlite && curTweenlite.kill();
 			
-			 while(container.numElements > 0)
+			 for(var key:String in videoDictionary)
 			 {
-				 var group:Group = container.getElementAt(0) as Group;
-				 removeRecommend(group);
+				 removeRecommend(videoDictionary[key]);
+				 delete videoDictionary[key];
 			 }
 			 
 			 if(videoList != null)
@@ -664,6 +691,25 @@ class RecommendUnit extends Group
 		setTitle();
 	}
 	
+	private function getURL(url:String):String
+	{
+		if (url.indexOf('/s3/') > 0) {
+			url = url.replace(/\/s3\//, "/s3irs/");
+			url += "_irs200.png";
+		}else  if (url.indexOf('/video.') != -1) {
+			url += "_200_150.jpg";
+		}else if(url.indexOf('ts3') != -1||url.indexOf('v8.')!=-1) {
+			url += "?ipn=small200x150";
+		}else  if (url.indexOf('cdn') != -1) {
+			if(url.indexOf('JPG')!= -1){
+				url += "_200_150.jpg";
+			}else{
+				url += "_irs200.png";
+			}
+		}
+		return url;
+	}
+	
 	private var labelBack:Rect;
 	private var label:Label;
 	private var IsInit:Boolean=false;
@@ -687,7 +733,7 @@ class RecommendUnit extends Group
 			video.buttonMode = true;
 			video.addEventListener(MouseEvent.CLICK, playVideo);
 			
-			NetManager.getInstance().loadImg(videoInfo.thumburl, function(bit:Bitmap):void{
+			NetManager.getInstance().loadImg(getURL(videoInfo.thumburl), function(bit:Bitmap):void{
 				video.skinName = bit;
 			});
 			

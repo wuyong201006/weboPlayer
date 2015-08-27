@@ -34,9 +34,11 @@ package component.skin.slider
 			progress.minWidth = 33;
 			progress.width = 100;
 			progress.height = 4;
-			progress.tabEnabled = false;
+//			progress.tabEnabled = false;
 			progress.skinName = HSliderProgressBarSkin;
 			addElementAt(progress, getElementIndex(trackHighlight));
+			progress.mouseEnabled = false;
+			progress.mouseChildren = false;
 			
 			trackHighlight.skinName = PlayerHSliderTrackHighlightSkin;
 			

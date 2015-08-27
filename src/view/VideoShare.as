@@ -65,7 +65,7 @@ package view
 			var pic:String = String(playerInfo.thumburl).replace(/\n/g, "");
 			var title:String = playerInfo.sharetitle != "" ?  playerInfo.sharetitle : playerInfo.title;//专题/简述标题
 			var summary:String = playerInfo.summary;
-			var rLink:String = NetConstant.PLAYER_WEBO_LINK_URL+"id="+Main.main.playerParams.id;//网站链接
+			var rLink:String = NetConstant.PLAYER_WEBO_LINK_URL+Main.main.playerParams.params;//网站链接
 			var url:String = "http://service.weibo.com/share/share.php?url=" + encodeURIComponent(rLink) + 
 				"&title="+ encodeURIComponent(title) +"&pic=" + encodeURIComponent(pic);
 			
@@ -74,7 +74,7 @@ package view
 		
 		private function clickHtml(event:MouseEvent):void
 		{
-			var htmlUrl:String = '<embed  src='+'"'+Main.main.playerParams.url+'"'+' type="application/x-shockwave-flash"'+' allowscriptaccess="always"'+' allowfullscreen="true"'+' wmode="opaque"'+' width="482"'+' height="355"'+'>';
+			var htmlUrl:String = '<embed  src='+'"'+Main.main.playerParams.swfUrl+'"'+' type="application/x-shockwave-flash"'+' allowscriptaccess="always"'+' allowfullscreen="true"'+' wmode="opaque"'+' width="482"'+' height="355"'+'>';
 			copy.text = htmlUrl;
 			
 			Clipboard.generalClipboard.clear();
@@ -84,7 +84,7 @@ package view
 		private function clickSwf(event:MouseEvent):void
 		{
 			var playerInfo:Object = Main.main.playerParams;
-			copy.text = playerInfo.url+"?"+"shareid="+playerInfo.id;
+			copy.text = playerInfo.swfUrl;
 			
 			Clipboard.generalClipboard.clear();
 			Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT, copy.text);

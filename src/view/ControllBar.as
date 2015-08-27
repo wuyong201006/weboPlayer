@@ -35,6 +35,7 @@ package view
 	import org.flexlite.domUI.components.UIAsset;
 	import org.flexlite.domUI.components.VSlider;
 	import org.flexlite.domUI.effects.Fade;
+	import org.flexlite.domUI.events.TrackBaseEvent;
 	
 	public class ControllBar extends Group
 	{
@@ -82,11 +83,10 @@ package view
 		
 		public function updateProgressBarCur(curValue:Number, maxValue:Number=0):void
 		{
-			
+			if(IsDrag)return;
 			progressBar.value = curValue;
 			
 //			progressBar.setEnabled = !(curValue == maxValue);
-			
 			maxValue = progressBar.maximum;
 			curProLabel.text = DateString.dateToString(curValue/10%3600)+"/"+DateString.dateToString(maxValue/10%3600);
 		}
@@ -124,6 +124,17 @@ package view
 			dispatchEvent( new PlayerEvent(PlayerEvent.CONTROLLBAR_PLAY, data));
 		}
 		
+		private function progressBarDrag(event:TrackBaseEvent):void
+		{
+			IsDrag = true;
+		}
+		
+		private function progressBarRelease(event:TrackBaseEvent):void
+		{
+			IsDrag = false;
+		}
+		
+		private var IsDrag:Boolean=false;
 		private var IsEnd:Boolean=false;
 		private function progressBarChange(event:Event):void
 		{
@@ -175,7 +186,6 @@ package view
 				volumeStatus = true;
 				volume = 0;
 			}
-			
 			volumeBar.value = volume;
 			dispatchEvent( new PlayerEvent(PlayerEvent.VOLUME_UPDATE, volume));
 		}
@@ -197,7 +207,10 @@ package view
 				volumeStatus = true;
 			else
 				volumeStatus = false;
-			
+			if(volumeBar.value > 0)
+				lastVolumeValue = volumeBar.value;
+			else
+				lastVolumeValue = 0.5;
 			dispatchEvent( new PlayerEvent(PlayerEvent.VOLUME_UPDATE, volumeBar.value));
 		}
 		
@@ -417,8 +430,9 @@ package view
 			volumeBar.addEventListener(Event.CHANGE,volumeBarChanged);
 			
 //			volumeBar.visible = false;
-			TweenLite.delayedCall(0.5, function():void{
+			TweenLite.delayedCall(0.2, function():void{
 				volumeBar.value = 0.5;
+				lastVolumeValue = 0.5;
 				dispatchEvent( new PlayerEvent(PlayerEvent.VOLUME_UPDATE, volumeBar.value));
 			})
 				
@@ -458,8 +472,10 @@ package view
 			progressBar.maximum = 1;
 			progressBar.stepSize = 1;
 			progressBar.skinName = PlayerHSliderSkin;
+			progressBar.addEventListener(TrackBaseEvent.THUMB_DRAG, progressBarDrag);
+			progressBar.addEventListener(TrackBaseEvent.THUMB_RELEASE, progressBarRelease);
 			progressBar.addEventListener(Event.CHANGE, progressBarChange);
-			progressBar.liveDragging = true;
+//			progressBar.liveDragging = true;
 			progressBar.IsFinish = true;
 		}
 	}

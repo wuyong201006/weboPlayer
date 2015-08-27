@@ -65,8 +65,10 @@ package
 		private var playerUrl:String = "http://www.tvm.cn/weibo/get_data?url=www.tvm.cn/ishare/play/play.html?id=";
 		
 		private var _playerParams:Object={
-			id:null,//(url id)
-			url:null//swf地址
+			swfUrl:null,//swf地址
+			id:null,//(url id)视频请求地址
+			url:null,//swf地址
+			params:null//swf参数
 		}
 		
 		private var _playerInfo:Object={
@@ -90,10 +92,12 @@ package
 			stage.color = 0x000000;
 			//收藏页
 			//navigateToURL( (new URLRequest("javascript:window.external.addFavorite('http://qq.com', '收藏名字')")), "_self");
-			
-			playerParams.url = this.loaderInfo.url.split("?")[0];
-			playerParams.id = this.loaderInfo.parameters.shareid;
-			
+			playerParams.swfUrl = this.loaderInfo.url;
+			var urlArray:Array = playerParams.swfUrl.split("?");
+			if(urlArray == null)return;
+			playerParams.url = urlArray.length > 0 ? urlArray[0] : "";
+			playerParams.params = urlArray.length > 1 ? urlArray[1] : "";
+			playerParams.id = this.loaderInfo.parameters.id;
 //			playerParams.id = 566389;
 //			playerParams.id = "18d24f91-c252-9644-32b8-902bcf309103";
 //			playerParams.id = 591376;
@@ -147,6 +151,7 @@ package
 		{
 			stage.addEventListener(FullScreenEvent.FULL_SCREEN,fullScreenChangeHandler);
 			stage.addEventListener(Event.RESIZE, resizeHandler);
+			addEventListener(Event.ENTER_FRAME, enterFrame);
 			
 			addEventListener(MouseEvent.MOUSE_MOVE,userActiveHandler);
 			
@@ -201,7 +206,7 @@ package
 					pInfo.url = da.media.content.url;
 					pInfo.summary = da.summary;
 					pInfo.thumburl = da.media.thumbnail.url;
-					pInfo.linksUrl = NetConstant.PLAYER_LINK_URL+"id="+playerParams.id;
+					pInfo.linksUrl = NetConstant.PLAYER_LINK_URL+playerParams.params;
 					playerInfoList.push(pInfo);
 				}
 				
@@ -217,7 +222,7 @@ package
 					playerInfo.url  = entry.media$group.media$content[0].url;
 					playerInfo.summary = entry.summary.$t;
 					playerInfo.thumburl = entry.media$group.media$thumbnail.url;
-					playerInfo.linksUrl = NetConstant.PLAYER_LINK_URL+"id="+playerParams.id;
+					playerInfo.linksUrl = NetConstant.PLAYER_LINK_URL+playerParams.params;
 					
 					initPlayer();
 				}
@@ -351,6 +356,8 @@ package
 			if(advertChart.panel_open_status)
 				advertChart.close();
 			if(recommend.panel_open_status)
+				recommend.close();
+			if(share.panel_open_status)
 				recommend.close();
 			playerSeek(Number(event.data)/10);
 		}
@@ -551,12 +558,19 @@ package
 			},1000);
 		}
 		
+		private function enterFrame(event:Event):void
+		{
+			fullScreenChangeHandler(null);
+		}
+		
 		private function resizeHandler(event:Event):void
 		{
 			fullScreenChangeHandler(null);
 		}
 		
 		private var IsNormal:Boolean=false;
+		private var lastW:Number;
+		private var lastH:Number;
 		private function fullScreenChangeHandler(event:FullScreenEvent):void
 		{
 			if(!IsInit)return;
@@ -567,6 +581,11 @@ package
 			
 			var w:Number = stage.stageWidth;
 			var h:Number = stage.stageHeight;
+			
+			if(w == lastW && h == lastH)return;
+			
+			lastW = w;
+			lastH = h;
 //			if(w < stage.fullScreenWidth)
 //				w = minW;
 //			if(h <stage.fullScreenHeight)
@@ -576,12 +595,17 @@ package
 //				w = minW;
 //			if(w == minW)
 //				h = minH;
+			if(stage.displayState == StageDisplayState.NORMAL)
+			{
+				visibleType = 0;
+				userActive = true;
+			}
 			
 			IsNormal = (mediaInfo.width/mediaInfo.height) == 4/3;
 			if(IsNormal)
 				visibleType = 1;
 			
-			if(stage && stage.displayState == StageDisplayState.FULL_SCREEN)
+			if(stage.displayState == StageDisplayState.FULL_SCREEN)
 				visibleType = 0;
 			
 			if(stage.displayState == StageDisplayState.NORMAL && IsNormal)
